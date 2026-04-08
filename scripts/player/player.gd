@@ -6,6 +6,8 @@
 ##
 ## Loads sprite sheets from disk based on player_id and builds SpriteFrames
 ## at runtime so each player has unique art.
+##
+## Uses an enum-based finite state machine for clean state management.
 extends CharacterBody2D
 
 ## Which player this instance represents (1 or 2). Determines input prefix.
@@ -55,27 +57,83 @@ const DEFAULT_ANIM_FPS: float = 10.0
 ## FPS for attack animations (slightly faster).
 const ATTACK_ANIM_FPS: float = 12.0
 
-@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
-@onready var shadow: Sprite2D = $Shadow
+## Light-attack combo window.
+const COMBO_WINDOW: float = 0.5  # seconds to chain next hit
 
-## Light-attack combo state.
+## Dodge constants.
+const DODGE_SPEED: float = 300.0
+const DODGE_DURATION: float = 0.2
+
+## Jump arc constants.
+const JUMP_FORCE: float = 200.0  # initial upward velocity
+const GRAVITY: float = 600.0     # pulls back down
+
+## Input buffer window.
+const INPUT_BUFFER_TIME: float = 0.15  # 150ms buffer window
+
+## Hurt stagger duration.
+const HURT_DURATION: float = 0.4
+
+## Knockdown duration (time on ground before getup).
+const KNOCKDOWN_DURATION: float = 0.8
+
+## Getup duration (recovery before returning to idle).
+const GETUP_DURATION: float = 0.5
+
+# ---------------------------------------------------------------------------
+# State machine
+# ---------------------------------------------------------------------------
+
+enum State {
+	IDLE,
+	MOVE,
+	JUMP,
+	ATTACK_1,
+	ATTACK_2,
+	ATTACK_3,
+	DODGE,
+	HURT,
+	KNOCKDOWN,
+	GETUP,
+	DEAD,
+}
+
+var _state: State = State.IDLE
+var _previous_state: State = State.IDLE
+
+# ---------------------------------------------------------------------------
+# State timers / variables
+# ---------------------------------------------------------------------------
+
+## Combo state.
 var _combo_count: int = 0
 var _combo_timer: float = 0.0
-const COMBO_WINDOW: float = 0.5  # seconds to chain next hit
 
 ## Dodge state.
 var _is_dodging: bool = false
 var _dodge_timer: float = 0.0
-const DODGE_SPEED: float = 300.0
-const DODGE_DURATION: float = 0.2
 
 ## Jump arc state.
 var _is_jumping: bool = false
 var _jump_velocity: float = 0.0
 var _jump_height: float = 0.0  # current visual offset (0 = on ground)
 
-const JUMP_FORCE: float = 200.0  # initial upward velocity
-const GRAVITY: float = 600.0     # pulls back down
+## Input buffer.
+var _buffered_input: StringName = &""
+var _buffer_timer: float = 0.0
+
+## Generic state timer (used by HURT, KNOCKDOWN, GETUP).
+var _state_timer: float = 0.0
+
+## Debug overlay.
+var _debug_label: Label = null
+var _debug_visible: bool = false
+
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var shadow: Sprite2D = $Shadow
+@onready var hitbox: Hitbox = $Hitbox
+@onready var hurtbox: Hurtbox = $Hurtbox
+@onready var health: HealthComponent = $HealthComponent
 
 
 func _ready() -> void:
@@ -84,22 +142,41 @@ func _ready() -> void:
 	# Offset the sprite so the feet (bottom of the frame) sit at the origin.
 	# AnimatedSprite2D centers the texture by default, so -half moves bottom to origin.
 	animated_sprite.offset = Vector2(0, -FRAME_SIZE / 2.0)
-	animated_sprite.play("idle")
+	animated_sprite.animation_finished.connect(_on_animation_finished)
 	_setup_shadow()
+	_setup_debug_label()
+	hitbox.owner_entity = self
+	hurtbox.owner_entity = self
+	hurtbox.damage_received.connect(_on_damage_received)
+	health.died.connect(_on_died)
+	_change_state(State.IDLE)
 
 
 func _physics_process(delta: float) -> void:
-	# Jump arc physics — update visual offset independent of other movement.
+	# Input buffer countdown.
+	if _buffer_timer > 0.0:
+		_buffer_timer -= delta
+		if _buffer_timer <= 0.0:
+			_buffered_input = &""
+
+	# Jump arc physics — runs regardless of state so aerial attacks keep the arc.
 	if _is_jumping:
 		_jump_velocity += GRAVITY * delta
 		_jump_height += _jump_velocity * delta
 
 		if _jump_height >= 0.0:
-			# Landed
+			# Landed.
 			_jump_height = 0.0
 			_is_jumping = false
 			_jump_velocity = 0.0
 			_combo_count = 0  # reset combo so ground combos start fresh
+			# Transition out of aerial state on landing.
+			if _state in [State.JUMP, State.ATTACK_1, State.ATTACK_2, State.ATTACK_3]:
+				var input_dir := _get_input_direction()
+				if input_dir.length() > 0.0:
+					_change_state(State.MOVE)
+				else:
+					_change_state(State.IDLE)
 
 		# Apply jump height as visual offset on the sprite (negative = up).
 		animated_sprite.offset.y = (-FRAME_SIZE / 2.0) + _jump_height
@@ -107,16 +184,213 @@ func _physics_process(delta: float) -> void:
 		# On ground — restore normal offset.
 		animated_sprite.offset.y = -FRAME_SIZE / 2.0
 
-	# Handle dodge movement — skip normal movement while dodging.
-	if _is_dodging:
-		_dodge_timer -= delta
-		var dodge_dir := -1.0 if animated_sprite.flip_h else 1.0
-		velocity = Vector2(dodge_dir * DODGE_SPEED, 0)
-		move_and_slide()
-		position.y = clampf(position.y, belt_min_y, belt_max_y)
-		if _dodge_timer <= 0.0:
+	# Run state-specific update.
+	_update_state(delta)
+
+	# Common post-update: clamp to belt, update z_index.
+	position.y = clampf(position.y, belt_min_y, belt_max_y)
+	z_index = int(position.y)
+
+	# Debug overlay.
+	if Input.is_action_just_pressed("ui_home"):  # F2 fallback — see _unhandled_input
+		_toggle_debug()
+	_update_debug()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F2:
+		_toggle_debug()
+
+
+# ===========================================================================
+# State machine core
+# ===========================================================================
+
+func _change_state(new_state: State) -> void:
+	if new_state == _state:
+		# Allow HURT to re-enter to refresh the stagger timer.
+		if new_state == State.HURT:
+			_state_timer = HURT_DURATION
+		return
+	_exit_state(_state)
+	_previous_state = _state
+	_state = new_state
+	_enter_state(new_state)
+
+
+func _enter_state(state: State) -> void:
+	match state:
+		State.IDLE:
+			_play_anim("idle")
+		State.MOVE:
+			_play_anim("walk")
+		State.JUMP:
+			_jump_velocity = -JUMP_FORCE
+			_jump_height = 0.0
+			_is_jumping = true
+			_play_anim("jump")
+		State.ATTACK_1:
+			_combo_count = 1
+			_combo_timer = COMBO_WINDOW
+			hitbox.damage = 10
+			hitbox.activate()
+			_play_anim("attack_1")
+		State.ATTACK_2:
+			_combo_count = 2
+			_combo_timer = COMBO_WINDOW
+			hitbox.damage = 15
+			hitbox.activate()
+			_play_anim("attack_2")
+		State.ATTACK_3:
+			_combo_count = 3
+			_combo_timer = COMBO_WINDOW
+			hitbox.damage = 25
+			hitbox.activate()
+			_play_anim("attack_3")
+		State.DODGE:
+			_is_dodging = true
+			_dodge_timer = DODGE_DURATION
+			_play_anim("run")
+		State.HURT:
+			_state_timer = HURT_DURATION
+			_play_anim("hurt")
+		State.KNOCKDOWN:
+			_state_timer = KNOCKDOWN_DURATION
+			_play_anim("dead")
+		State.GETUP:
+			_state_timer = GETUP_DURATION
+			_play_anim("idle")
+		State.DEAD:
+			_play_anim("dead")
+
+
+func _exit_state(state: State) -> void:
+	match state:
+		State.DODGE:
 			_is_dodging = false
-		return  # skip normal movement during dodge
+		State.JUMP:
+			_jump_height = 0.0
+			_is_jumping = false
+			animated_sprite.offset.y = -FRAME_SIZE / 2.0
+		State.ATTACK_1, State.ATTACK_2, State.ATTACK_3:
+			hitbox.deactivate()
+			# If combo window expired, reset count.
+			if _combo_timer <= 0.0:
+				_combo_count = 0
+
+
+func _update_state(delta: float) -> void:
+	match _state:
+		State.IDLE:
+			_update_idle(delta)
+		State.MOVE:
+			_update_move(delta)
+		State.JUMP:
+			_update_jump(delta)
+		State.ATTACK_1:
+			_update_attack(delta)
+		State.ATTACK_2:
+			_update_attack(delta)
+		State.ATTACK_3:
+			_update_attack(delta)
+		State.DODGE:
+			_update_dodge(delta)
+		State.HURT:
+			_update_hurt(delta)
+		State.KNOCKDOWN:
+			_update_knockdown(delta)
+		State.GETUP:
+			_update_getup(delta)
+		State.DEAD:
+			_update_dead(delta)
+
+
+# ===========================================================================
+# Per-state update functions
+# ===========================================================================
+
+func _update_idle(_delta: float) -> void:
+	var prefix := "p%d_" % player_id
+
+	# Check combat inputs.
+	if Input.is_action_just_pressed(prefix + "light"):
+		_change_state(State.ATTACK_1)
+		return
+	if Input.is_action_just_pressed(prefix + "heavy"):
+		_change_state(State.ATTACK_2)
+		return
+	if Input.is_action_just_pressed(prefix + "jump"):
+		_change_state(State.JUMP)
+		return
+	if Input.is_action_just_pressed(prefix + "dodge"):
+		_change_state(State.DODGE)
+		return
+
+	# Check movement.
+	var input_dir := _get_input_direction()
+	if input_dir.length() > 0.0:
+		_change_state(State.MOVE)
+		return
+
+
+func _update_move(_delta: float) -> void:
+	var prefix := "p%d_" % player_id
+	var input_dir := _get_input_direction()
+
+	# Check combat inputs.
+	if Input.is_action_just_pressed(prefix + "light"):
+		_change_state(State.ATTACK_1)
+		return
+	if Input.is_action_just_pressed(prefix + "heavy"):
+		_change_state(State.ATTACK_2)
+		return
+	if Input.is_action_just_pressed(prefix + "jump"):
+		_change_state(State.JUMP)
+		return
+	if Input.is_action_just_pressed(prefix + "dodge"):
+		_change_state(State.DODGE)
+		return
+
+	# No movement → idle.
+	if input_dir.length() == 0.0:
+		_change_state(State.IDLE)
+		return
+
+	# Apply movement.
+	_apply_movement(input_dir)
+
+	# Flip sprite based on horizontal direction.
+	if input_dir.x != 0.0:
+		animated_sprite.flip_h = input_dir.x < 0.0
+
+
+func _update_jump(_delta: float) -> void:
+	var prefix := "p%d_" % player_id
+
+	# Allow attacking mid-air.
+	if Input.is_action_just_pressed(prefix + "light"):
+		_change_state(State.ATTACK_1)
+		return
+	if Input.is_action_just_pressed(prefix + "heavy"):
+		_change_state(State.ATTACK_2)
+		return
+
+	# Horizontal movement during jump.
+	var input_dir := _get_input_direction()
+	if input_dir.length() > 0.0:
+		_apply_movement(input_dir)
+		if input_dir.x != 0.0:
+			animated_sprite.flip_h = input_dir.x < 0.0
+	else:
+		velocity = Vector2.ZERO
+		move_and_slide()
+
+
+func _update_attack(delta: float) -> void:
+	var prefix := "p%d_" % player_id
+
+	# Position hitbox in front of player based on facing direction.
+	hitbox.position.x = 30.0 if not animated_sprite.flip_h else -30.0
 
 	# Combo timer countdown.
 	if _combo_timer > 0.0:
@@ -124,105 +398,196 @@ func _physics_process(delta: float) -> void:
 		if _combo_timer <= 0.0:
 			_combo_count = 0
 
-	var input_dir := _get_input_direction()
+	# Buffer attack input during animation.
+	if Input.is_action_just_pressed(prefix + "light"):
+		_buffered_input = &"light"
+		_buffer_timer = INPUT_BUFFER_TIME
+	if Input.is_action_just_pressed(prefix + "heavy"):
+		_buffered_input = &"heavy"
+		_buffer_timer = INPUT_BUFFER_TIME
 
-	# Build velocity vector with reduced vertical speed.
+	# If jumping, keep the jump arc movement going.
+	if _is_jumping:
+		var input_dir := _get_input_direction()
+		if input_dir.length() > 0.0:
+			_apply_movement(input_dir)
+			if input_dir.x != 0.0:
+				animated_sprite.flip_h = input_dir.x < 0.0
+		else:
+			velocity = Vector2.ZERO
+			move_and_slide()
+	else:
+		# Ground attacks: stop movement.
+		velocity = Vector2.ZERO
+		move_and_slide()
+
+
+func _update_dodge(delta: float) -> void:
+	_dodge_timer -= delta
+	var dodge_dir := -1.0 if animated_sprite.flip_h else 1.0
+	velocity = Vector2(dodge_dir * DODGE_SPEED, 0)
+	move_and_slide()
+
+	if _dodge_timer <= 0.0:
+		var input_dir := _get_input_direction()
+		if input_dir.length() > 0.0:
+			_change_state(State.MOVE)
+		else:
+			_change_state(State.IDLE)
+
+
+func _update_hurt(delta: float) -> void:
+	_state_timer -= delta
+	velocity = Vector2.ZERO
+	move_and_slide()
+	if _state_timer <= 0.0:
+		_change_state(State.IDLE)
+
+
+func _update_knockdown(delta: float) -> void:
+	_state_timer -= delta
+	velocity = Vector2.ZERO
+	move_and_slide()
+	if _state_timer <= 0.0:
+		_change_state(State.GETUP)
+
+
+func _update_getup(delta: float) -> void:
+	_state_timer -= delta
+	velocity = Vector2.ZERO
+	move_and_slide()
+	if _state_timer <= 0.0:
+		_change_state(State.IDLE)
+
+
+func _update_dead(_delta: float) -> void:
+	# No transitions — game over for this player.
+	velocity = Vector2.ZERO
+	move_and_slide()
+
+
+# ===========================================================================
+# Animation finished callback
+# ===========================================================================
+
+func _on_animation_finished() -> void:
+	match _state:
+		State.ATTACK_1:
+			_on_attack_finished(State.ATTACK_2)
+		State.ATTACK_2:
+			_on_attack_finished(State.ATTACK_3)
+		State.ATTACK_3:
+			# Combo ends after third hit.
+			_combo_count = 0
+			_on_attack_chain_end()
+		State.HURT:
+			_change_state(State.IDLE)
+		State.KNOCKDOWN:
+			# Animation finished but stay in knockdown until timer expires.
+			pass
+		State.GETUP:
+			_change_state(State.IDLE)
+
+
+## Handle the end of an attack animation — check buffer/combo for chaining.
+func _on_attack_finished(next_combo_state: State) -> void:
+	# Check buffered input for combo continuation.
+	if _buffered_input == &"light" and _combo_timer > 0.0:
+		_buffered_input = &""
+		_buffer_timer = 0.0
+		_change_state(next_combo_state)
+		return
+	if _buffered_input == &"heavy":
+		_buffered_input = &""
+		_buffer_timer = 0.0
+		_change_state(next_combo_state)
+		return
+
+	# No combo continuation — return to movement or idle.
+	_on_attack_chain_end()
+
+
+## Transition out of attack when the combo chain ends or breaks.
+func _on_attack_chain_end() -> void:
+	_buffered_input = &""
+	_buffer_timer = 0.0
+
+	# If still in the air, go back to jump state.
+	if _is_jumping:
+		_change_state(State.JUMP)
+		return
+
+	var input_dir := _get_input_direction()
+	if input_dir.length() > 0.0:
+		_change_state(State.MOVE)
+	else:
+		_change_state(State.IDLE)
+
+
+# ===========================================================================
+# Public API for external systems (hitbox, health, etc.)
+# ===========================================================================
+
+## Call this from a hitbox/damage system to put the player into hurt state.
+func take_damage() -> void:
+	if _state == State.DEAD or _state == State.GETUP:
+		return
+	_change_state(State.HURT)
+
+
+## Call this for heavy hits that knock the player down.
+func knockdown() -> void:
+	if _state == State.DEAD:
+		return
+	_change_state(State.KNOCKDOWN)
+
+
+## Call this when HP reaches zero.
+func die() -> void:
+	_change_state(State.DEAD)
+
+
+## Callback wired to [Hurtbox.damage_received] — applies damage, knockback,
+## hitstop, and transitions to the appropriate state.
+func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker: Node) -> void:
+	if _state == State.DEAD or _state == State.GETUP:
+		return
+	health.take_damage(amount)
+	# Apply knockback direction.
+	if attacker and is_instance_valid(attacker):
+		var dir := sign(global_position.x - attacker.global_position.x)
+		velocity = Vector2(dir * knockback, 0)
+	HitStop.freeze(0.05)
+	if health.is_dead():
+		_change_state(State.DEAD)
+	elif _state == State.KNOCKDOWN:
+		pass  # already down, don't interrupt
+	else:
+		_change_state(State.HURT)
+
+
+## Callback wired to [HealthComponent.died].
+func _on_died() -> void:
+	_change_state(State.DEAD)
+
+
+# ===========================================================================
+# Helpers
+# ===========================================================================
+
+## Play an animation with a has_animation guard.
+func _play_anim(anim_name: String) -> void:
+	if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation(anim_name):
+		animated_sprite.play(anim_name)
+
+
+## Apply standard movement from an input direction vector.
+func _apply_movement(input_dir: Vector2) -> void:
 	velocity = Vector2(
 		input_dir.x * move_speed,
 		input_dir.y * move_speed * VERTICAL_SPEED_FACTOR
 	)
-
 	move_and_slide()
-
-	# Clamp position to play belt.
-	position.y = clampf(position.y, belt_min_y, belt_max_y)
-
-	# Flip sprite based on horizontal direction.
-	if input_dir.x != 0.0:
-		animated_sprite.flip_h = input_dir.x < 0.0
-
-	# Check for combat inputs before updating locomotion animation.
-	_handle_combat_input()
-
-	# Switch between walk and idle animations.
-	_update_animation(input_dir)
-
-	# Z-index follows Y so lower characters render in front.
-	z_index = int(position.y)
-
-
-## Check for combat-related input (attacks, jump, dodge) and play the
-## appropriate one-shot animation.
-func _handle_combat_input() -> void:
-	var prefix := "p%d_" % player_id
-
-	# Don't accept new combat input during one-shot animations (but NOT jump —
-	# players must be able to attack while airborne).
-	var current := animated_sprite.animation
-	if current in ["attack_1", "attack_2", "attack_3", "run_attack", "hurt", "dead"]:
-		if animated_sprite.is_playing():
-			# While jumping, allow attacks to interrupt an existing attack anim.
-			if not _is_jumping:
-				return
-
-	# Jump
-	if Input.is_action_just_pressed(prefix + "jump"):
-		if not _is_jumping:
-			# Don't allow jump during ground attack animations.
-			if current in ["attack_1", "attack_2", "attack_3", "run_attack"]:
-				if animated_sprite.is_playing():
-					return
-			_is_jumping = true
-			_jump_velocity = -JUMP_FORCE  # negative = up in screen coords
-			if animated_sprite.sprite_frames.has_animation("jump"):
-				animated_sprite.play("jump")
-		return
-
-	# Light attack — cycles through attack_1, attack_2, attack_3 for basic combo.
-	if Input.is_action_just_pressed(prefix + "light"):
-		_do_light_attack()
-		return
-
-	# Heavy attack
-	if Input.is_action_just_pressed(prefix + "heavy"):
-		if animated_sprite.sprite_frames.has_animation("attack_2"):
-			animated_sprite.play("attack_2")
-		return
-
-	# Dodge — quick dash in facing direction (ground only).
-	if Input.is_action_just_pressed(prefix + "dodge"):
-		if not _is_jumping:
-			_do_dodge()
-		return
-
-
-## Execute the next hit in the 3-hit light-attack combo chain.
-func _do_light_attack() -> void:
-	_combo_count += 1
-	_combo_timer = COMBO_WINDOW
-
-	match _combo_count:
-		1:
-			if animated_sprite.sprite_frames.has_animation("attack_1"):
-				animated_sprite.play("attack_1")
-		2:
-			if animated_sprite.sprite_frames.has_animation("attack_2"):
-				animated_sprite.play("attack_2")
-		_:
-			if animated_sprite.sprite_frames.has_animation("attack_3"):
-				animated_sprite.play("attack_3")
-			else:
-				if animated_sprite.sprite_frames.has_animation("attack_1"):
-					animated_sprite.play("attack_1")
-			_combo_count = 0  # reset after 3rd hit
-
-
-## Start a dodge: short burst of speed in the current facing direction.
-func _do_dodge() -> void:
-	_is_dodging = true
-	_dodge_timer = DODGE_DURATION
-	if animated_sprite.sprite_frames.has_animation("run"):
-		animated_sprite.play("run")
 
 
 ## Read the four directional actions for this player and return a normalised
@@ -237,23 +602,41 @@ func _get_input_direction() -> Vector2:
 	return dir
 
 
-## Select the correct animation based on movement state.
-# TODO: Wire up run animation when sprint/run input is added.
-func _update_animation(input_dir: Vector2) -> void:
-	var current := animated_sprite.animation
-	# Don't interrupt one-shot animations (attacks, hurt, dead).
-	if current in ["attack_1", "attack_2", "attack_3", "run_attack", "hurt", "dead", "jump"]:
-		if animated_sprite.is_playing():
-			return
+# ===========================================================================
+# Debug overlay
+# ===========================================================================
 
-	if input_dir.length() > 0.0:
-		if animated_sprite.sprite_frames.has_animation("walk"):
-			if current != "walk":
-				animated_sprite.play("walk")
-	else:
-		if current != "idle":
-			animated_sprite.play("idle")
+func _setup_debug_label() -> void:
+	_debug_label = Label.new()
+	_debug_label.add_theme_font_size_override("font_size", 10)
+	_debug_label.add_theme_color_override("font_color", Color.YELLOW)
+	_debug_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_debug_label.add_theme_constant_override("outline_size", 2)
+	_debug_label.position = Vector2(-30, -FRAME_SIZE - 12)
+	_debug_label.visible = _debug_visible
+	add_child(_debug_label)
 
+
+func _toggle_debug() -> void:
+	_debug_visible = not _debug_visible
+	if _debug_label:
+		_debug_label.visible = _debug_visible
+
+
+func _update_debug() -> void:
+	if _debug_label and _debug_visible:
+		var state_name: String = State.keys()[_state]
+		var extra := ""
+		if _is_jumping:
+			extra = " (air)"
+		if _buffered_input != &"":
+			extra += " buf:" + str(_buffered_input)
+		_debug_label.text = "P%d %s%s" % [player_id, state_name, extra]
+
+
+# ===========================================================================
+# Sprite loading (unchanged)
+# ===========================================================================
 
 ## Build a SpriteFrames resource by loading every sprite sheet found in the
 ## given folder and slicing it into 96x96 AtlasTexture frames.
