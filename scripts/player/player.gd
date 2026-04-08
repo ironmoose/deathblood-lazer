@@ -58,6 +58,17 @@ const ATTACK_ANIM_FPS: float = 12.0
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var shadow: Sprite2D = $Shadow
 
+## Light-attack combo state.
+var _combo_count: int = 0
+var _combo_timer: float = 0.0
+const COMBO_WINDOW: float = 0.5  # seconds to chain next hit
+
+## Dodge state.
+var _is_dodging: bool = false
+var _dodge_timer: float = 0.0
+const DODGE_SPEED: float = 300.0
+const DODGE_DURATION: float = 0.2
+
 
 func _ready() -> void:
 	var folder: String = SPRITE_PATHS.get(player_id, SPRITE_PATHS[1])
@@ -69,7 +80,24 @@ func _ready() -> void:
 	_setup_shadow()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	# Handle dodge movement — skip normal movement while dodging.
+	if _is_dodging:
+		_dodge_timer -= delta
+		var dodge_dir := -1.0 if animated_sprite.flip_h else 1.0
+		velocity = Vector2(dodge_dir * DODGE_SPEED, 0)
+		move_and_slide()
+		position.y = clampf(position.y, belt_min_y, belt_max_y)
+		if _dodge_timer <= 0.0:
+			_is_dodging = false
+		return  # skip normal movement during dodge
+
+	# Combo timer countdown.
+	if _combo_timer > 0.0:
+		_combo_timer -= delta
+		if _combo_timer <= 0.0:
+			_combo_count = 0
+
 	var input_dir := _get_input_direction()
 
 	# Build velocity vector with reduced vertical speed.
@@ -87,11 +115,77 @@ func _physics_process(_delta: float) -> void:
 	if input_dir.x != 0.0:
 		animated_sprite.flip_h = input_dir.x < 0.0
 
+	# Check for combat inputs before updating locomotion animation.
+	_handle_combat_input()
+
 	# Switch between walk and idle animations.
 	_update_animation(input_dir)
 
 	# Z-index follows Y so lower characters render in front.
 	z_index = int(position.y)
+
+
+## Check for combat-related input (attacks, jump, dodge) and play the
+## appropriate one-shot animation.
+func _handle_combat_input() -> void:
+	var prefix := "p%d_" % player_id
+
+	# Don't accept new combat input during one-shot animations.
+	var current := animated_sprite.animation
+	if current in ["attack_1", "attack_2", "attack_3", "run_attack", "hurt", "dead", "jump"]:
+		if animated_sprite.is_playing():
+			return
+
+	# Jump
+	if Input.is_action_just_pressed(prefix + "jump"):
+		if animated_sprite.sprite_frames.has_animation("jump"):
+			animated_sprite.play("jump")
+		return
+
+	# Light attack — cycles through attack_1, attack_2, attack_3 for basic combo.
+	if Input.is_action_just_pressed(prefix + "light"):
+		_do_light_attack()
+		return
+
+	# Heavy attack
+	if Input.is_action_just_pressed(prefix + "heavy"):
+		if animated_sprite.sprite_frames.has_animation("attack_2"):
+			animated_sprite.play("attack_2")
+		return
+
+	# Dodge — quick dash in facing direction.
+	if Input.is_action_just_pressed(prefix + "dodge"):
+		_do_dodge()
+		return
+
+
+## Execute the next hit in the 3-hit light-attack combo chain.
+func _do_light_attack() -> void:
+	_combo_count += 1
+	_combo_timer = COMBO_WINDOW
+
+	match _combo_count:
+		1:
+			if animated_sprite.sprite_frames.has_animation("attack_1"):
+				animated_sprite.play("attack_1")
+		2:
+			if animated_sprite.sprite_frames.has_animation("attack_2"):
+				animated_sprite.play("attack_2")
+		_:
+			if animated_sprite.sprite_frames.has_animation("attack_3"):
+				animated_sprite.play("attack_3")
+			else:
+				if animated_sprite.sprite_frames.has_animation("attack_1"):
+					animated_sprite.play("attack_1")
+			_combo_count = 0  # reset after 3rd hit
+
+
+## Start a dodge: short burst of speed in the current facing direction.
+func _do_dodge() -> void:
+	_is_dodging = true
+	_dodge_timer = DODGE_DURATION
+	if animated_sprite.sprite_frames.has_animation("run"):
+		animated_sprite.play("run")
 
 
 ## Read the four directional actions for this player and return a normalised
@@ -111,7 +205,7 @@ func _get_input_direction() -> Vector2:
 func _update_animation(input_dir: Vector2) -> void:
 	var current := animated_sprite.animation
 	# Don't interrupt one-shot animations (attacks, hurt, dead).
-	if current in ["attack_1", "attack_2", "attack_3", "run_attack", "hurt", "dead"]:
+	if current in ["attack_1", "attack_2", "attack_3", "run_attack", "hurt", "dead", "jump"]:
 		if animated_sprite.is_playing():
 			return
 
