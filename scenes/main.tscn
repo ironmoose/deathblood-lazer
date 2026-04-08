@@ -5,14 +5,14 @@
 [node name="Main" type="Node"]
 
 [node name="Background" type="ColorRect" parent="."]
-offset_right = 480.0
-offset_bottom = 270.0
+offset_right = 640.0
+offset_bottom = 360.0
 color = Color(0.18, 0.22, 0.16, 1)
 
 [node name="FloorBelt" type="ColorRect" parent="."]
-offset_top = 85.0
-offset_right = 480.0
-offset_bottom = 175.0
+offset_top = 115.0
+offset_right = 640.0
+offset_bottom = 235.0
 color = Color(0.28, 0.32, 0.24, 1)
 
 [node name="Game" type="Node2D" parent="."]
@@ -21,9 +21,9 @@ color = Color(0.28, 0.32, 0.24, 1)
 y_sort_enabled = true
 
 [node name="Player1" parent="Game/Entities" instance=ExtResource("1_player_scene")]
-position = Vector2(120, 125)
+position = Vector2(160, 170)
 player_id = 1
 
 [node name="Player2" parent="Game/Entities" instance=ExtResource("1_player_scene")]
-position = Vector2(200, 125)
+position = Vector2(260, 170)
 player_id = 2
