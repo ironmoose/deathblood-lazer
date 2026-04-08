@@ -1,3 +1,29 @@
-[gd_scene format=3 uid="uid://b1a2b3c4d5e6f"]
+[gd_scene load_steps=2 format=3 uid="uid://b1a2b3c4d5e6f"]
+
+[ext_resource type="PackedScene" uid="uid://cp1ay3rsc3n3" path="res://scenes/player/player.tscn" id="1_player_scene"]
 
 [node name="Main" type="Node"]
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.18, 0.22, 0.16, 1)
+
+[node name="FloorBelt" type="ColorRect" parent="."]
+offset_top = 380.0
+offset_right = 1920.0
+offset_bottom = 620.0
+color = Color(0.28, 0.32, 0.24, 1)
+
+[node name="Game" type="Node2D" parent="."]
+
+[node name="Entities" type="Node2D" parent="Game"]
+y_sort_enabled = true
+
+[node name="Player1" parent="Game/Entities" instance=ExtResource("1_player_scene")]
+position = Vector2(400, 500)
+player_id = 1
+
+[node name="Player2" parent="Game/Entities" instance=ExtResource("1_player_scene")]
+position = Vector2(600, 500)
+player_id = 2
