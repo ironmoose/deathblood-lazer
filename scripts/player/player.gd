@@ -99,6 +99,7 @@ func _physics_process(delta: float) -> void:
 			_jump_height = 0.0
 			_is_jumping = false
 			_jump_velocity = 0.0
+			_combo_count = 0  # reset combo so ground combos start fresh
 
 		# Apply jump height as visual offset on the sprite (negative = up).
 		animated_sprite.offset.y = (-FRAME_SIZE / 2.0) + _jump_height
@@ -155,15 +156,22 @@ func _physics_process(delta: float) -> void:
 func _handle_combat_input() -> void:
 	var prefix := "p%d_" % player_id
 
-	# Don't accept new combat input during one-shot animations.
+	# Don't accept new combat input during one-shot animations (but NOT jump —
+	# players must be able to attack while airborne).
 	var current := animated_sprite.animation
-	if current in ["attack_1", "attack_2", "attack_3", "run_attack", "hurt", "dead", "jump"]:
+	if current in ["attack_1", "attack_2", "attack_3", "run_attack", "hurt", "dead"]:
 		if animated_sprite.is_playing():
-			return
+			# While jumping, allow attacks to interrupt an existing attack anim.
+			if not _is_jumping:
+				return
 
 	# Jump
 	if Input.is_action_just_pressed(prefix + "jump"):
 		if not _is_jumping:
+			# Don't allow jump during ground attack animations.
+			if current in ["attack_1", "attack_2", "attack_3", "run_attack"]:
+				if animated_sprite.is_playing():
+					return
 			_is_jumping = true
 			_jump_velocity = -JUMP_FORCE  # negative = up in screen coords
 			if animated_sprite.sprite_frames.has_animation("jump"):
@@ -181,9 +189,10 @@ func _handle_combat_input() -> void:
 			animated_sprite.play("attack_2")
 		return
 
-	# Dodge — quick dash in facing direction.
+	# Dodge — quick dash in facing direction (ground only).
 	if Input.is_action_just_pressed(prefix + "dodge"):
-		_do_dodge()
+		if not _is_jumping:
+			_do_dodge()
 		return
 
 
