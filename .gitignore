@@ -1,0 +1,26 @@
+# Godot 4+ specific ignores
+.godot/
+
+# Godot-specific ignores
+*.translation
+
+# Imported resources
+.import/
+
+# Mono-specific ignores
+.mono/
+data_*/
+mono_crash.*.json
+
+# Export templates
+*.export_presets.cfg
+
+# OS-generated
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor backups
+*.swp
+*.swo
+*~
