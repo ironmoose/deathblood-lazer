@@ -12,7 +12,7 @@ extends CharacterBody2D
 @export var player_id: int = 1
 
 ## Horizontal / vertical base movement speed in pixels per second.
-@export var move_speed: float = 80.0
+@export var move_speed: float = 96.0
 
 ## Top edge of the playable belt (Y coordinate).
 @export var belt_min_y: float = 115.0
