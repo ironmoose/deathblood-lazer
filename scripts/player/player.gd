@@ -137,6 +137,7 @@ var _debug_visible: bool = false
 
 
 func _ready() -> void:
+	add_to_group("players")
 	var folder: String = SPRITE_PATHS.get(player_id, SPRITE_PATHS[1])
 	animated_sprite.sprite_frames = _load_sprite_frames(folder)
 	# Offset the sprite so the feet (bottom of the frame) sit at the origin.
@@ -149,6 +150,7 @@ func _ready() -> void:
 	hurtbox.owner_entity = self
 	hurtbox.damage_received.connect(_on_damage_received)
 	health.died.connect(_on_died)
+	health.initialize()
 	_change_state(State.IDLE)
 
 
@@ -564,6 +566,10 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 		pass  # already down, don't interrupt
 	else:
 		_change_state(State.HURT)
+
+
+func is_dead() -> bool:
+	return _state == State.DEAD
 
 
 ## Callback wired to [HealthComponent.died].

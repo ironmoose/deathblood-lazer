@@ -13,6 +13,13 @@ var current_hp: int
 
 
 func _ready() -> void:
+	# Parent sets max_hp and calls initialize() after.
+	pass
+
+
+func initialize(hp: int = -1) -> void:
+	if hp > 0:
+		max_hp = hp
 	current_hp = max_hp
 
 
