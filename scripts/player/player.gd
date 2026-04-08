@@ -12,13 +12,13 @@ extends CharacterBody2D
 @export var player_id: int = 1
 
 ## Horizontal / vertical base movement speed in pixels per second.
-@export var move_speed: float = 200.0
+@export var move_speed: float = 60.0
 
 ## Top edge of the playable belt (Y coordinate).
-@export var belt_min_y: float = 400.0
+@export var belt_min_y: float = 85.0
 
 ## Bottom edge of the playable belt (Y coordinate).
-@export var belt_max_y: float = 600.0
+@export var belt_max_y: float = 175.0
 
 ## Vertical speed multiplier to give a depth / perspective feel.
 const VERTICAL_SPEED_FACTOR: float = 0.7
@@ -63,7 +63,8 @@ func _ready() -> void:
 	var folder: String = SPRITE_PATHS.get(player_id, SPRITE_PATHS[1])
 	animated_sprite.sprite_frames = _load_sprite_frames(folder)
 	# Offset the sprite so the feet (bottom of the frame) sit at the origin.
-	animated_sprite.offset = Vector2(0, -FRAME_SIZE)
+	# AnimatedSprite2D centers the texture by default, so -half moves bottom to origin.
+	animated_sprite.offset = Vector2(0, -FRAME_SIZE / 2.0)
 	animated_sprite.play("idle")
 	_setup_shadow()
 
