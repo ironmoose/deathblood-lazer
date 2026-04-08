@@ -68,12 +68,12 @@ func _get_input_direction() -> Vector2:
 
 ## Build coloured placeholder textures so the game is playable without art.
 func _setup_placeholder_visuals() -> void:
-	# Body colour: P1 = blue, P2 = green.
+	# Body colour: P1 = orange (dad), P2 = blue (Wiley).
 	var body_color: Color
 	if player_id == 1:
-		body_color = Color(0.2, 0.4, 0.9, 1.0)  # blue
+		body_color = Color(1.0, 0.5, 0.0, 1.0)  # orange
 	else:
-		body_color = Color(0.2, 0.8, 0.3, 1.0)  # green
+		body_color = Color(0.2, 0.4, 0.9, 1.0)  # blue
 
 	# Create body texture.
 	var body_image := Image.create(BODY_WIDTH, BODY_HEIGHT, false, Image.FORMAT_RGBA8)
