@@ -69,6 +69,14 @@ var _dodge_timer: float = 0.0
 const DODGE_SPEED: float = 300.0
 const DODGE_DURATION: float = 0.2
 
+## Jump arc state.
+var _is_jumping: bool = false
+var _jump_velocity: float = 0.0
+var _jump_height: float = 0.0  # current visual offset (0 = on ground)
+
+const JUMP_FORCE: float = 200.0  # initial upward velocity
+const GRAVITY: float = 600.0     # pulls back down
+
 
 func _ready() -> void:
 	var folder: String = SPRITE_PATHS.get(player_id, SPRITE_PATHS[1])
@@ -81,6 +89,23 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Jump arc physics — update visual offset independent of other movement.
+	if _is_jumping:
+		_jump_velocity += GRAVITY * delta
+		_jump_height += _jump_velocity * delta
+
+		if _jump_height >= 0.0:
+			# Landed
+			_jump_height = 0.0
+			_is_jumping = false
+			_jump_velocity = 0.0
+
+		# Apply jump height as visual offset on the sprite (negative = up).
+		animated_sprite.offset.y = (-FRAME_SIZE / 2.0) + _jump_height
+	else:
+		# On ground — restore normal offset.
+		animated_sprite.offset.y = -FRAME_SIZE / 2.0
+
 	# Handle dodge movement — skip normal movement while dodging.
 	if _is_dodging:
 		_dodge_timer -= delta
@@ -138,8 +163,11 @@ func _handle_combat_input() -> void:
 
 	# Jump
 	if Input.is_action_just_pressed(prefix + "jump"):
-		if animated_sprite.sprite_frames.has_animation("jump"):
-			animated_sprite.play("jump")
+		if not _is_jumping:
+			_is_jumping = true
+			_jump_velocity = -JUMP_FORCE  # negative = up in screen coords
+			if animated_sprite.sprite_frames.has_animation("jump"):
+				animated_sprite.play("jump")
 		return
 
 	# Light attack — cycles through attack_1, attack_2, attack_3 for basic combo.
