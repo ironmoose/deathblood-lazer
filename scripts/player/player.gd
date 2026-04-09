@@ -217,7 +217,7 @@ func _change_state(new_state: State) -> void:
 		if new_state == State.HURT:
 			_state_timer = HURT_DURATION
 		return
-	_exit_state(_state)
+	_exit_state(_state, new_state)
 	_previous_state = _state
 	_state = new_state
 	_enter_state(new_state)
@@ -230,9 +230,10 @@ func _enter_state(state: State) -> void:
 		State.MOVE:
 			_play_anim("walk")
 		State.JUMP:
-			_jump_velocity = -JUMP_FORCE
-			_jump_height = 0.0
-			_is_jumping = true
+			if not _is_jumping:
+				_jump_velocity = -JUMP_FORCE
+				_jump_height = 0.0
+				_is_jumping = true
 			_play_anim("jump")
 		State.ATTACK_1:
 			_combo_count = 1
@@ -269,19 +270,28 @@ func _enter_state(state: State) -> void:
 			_play_anim("dead")
 
 
-func _exit_state(state: State) -> void:
+func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 	match state:
 		State.DODGE:
 			_is_dodging = false
 		State.JUMP:
-			_jump_height = 0.0
-			_is_jumping = false
-			animated_sprite.offset.y = -FRAME_SIZE / 2.0
+			# Keep the jump arc alive when transitioning to an air attack.
+			# The arc physics in _physics_process continues independently;
+			# clearing here would snap the character to the ground.
+			if next_state not in [State.ATTACK_1, State.ATTACK_2, State.ATTACK_3]:
+				_jump_height = 0.0
+				_is_jumping = false
+				animated_sprite.offset.y = -FRAME_SIZE / 2.0
 		State.ATTACK_1, State.ATTACK_2, State.ATTACK_3:
 			hitbox.deactivate()
-			# If combo window expired, reset count.
 			if _combo_timer <= 0.0:
 				_combo_count = 0
+			# If airborne and transitioning to a non-aerial state, land immediately.
+			if _is_jumping and next_state not in [State.JUMP, State.ATTACK_1, State.ATTACK_2, State.ATTACK_3]:
+				_is_jumping = false
+				_jump_height = 0.0
+				_jump_velocity = 0.0
+				animated_sprite.offset.y = -FRAME_SIZE / 2.0
 
 
 func _update_state(delta: float) -> void:
@@ -406,9 +416,27 @@ func _update_attack(delta: float) -> void:
 		_buffered_input = &"heavy"
 		_buffer_timer = INPUT_BUFFER_TIME
 
+	# Allow dodge cancel at any point during a ground attack.
+	if not _is_jumping and Input.is_action_just_pressed(_input_prefix + "dodge"):
+		_change_state(State.DODGE)
+		return
+
+	# Allow movement cancel once we are in recovery frames (>= 60% through
+	# the animation).  Only applies on the ground — air attacks finish normally.
+	if not _is_jumping and animated_sprite.sprite_frames:
+		var anim: StringName = animated_sprite.animation
+		var frame_count: int = animated_sprite.sprite_frames.get_frame_count(anim)
+		if frame_count > 1:
+			var progress: float = float(animated_sprite.frame) / float(frame_count - 1)
+			if progress >= 0.6:
+				var input_dir: Vector2 = _get_input_direction()
+				if input_dir.length() > 0.001:
+					_change_state(State.MOVE)
+					return
+
 	# If jumping, keep the jump arc movement going.
 	if _is_jumping:
-		var input_dir := _get_input_direction()
+		var input_dir: Vector2 = _get_input_direction()
 		if input_dir.length() > 0.0:
 			_apply_movement(input_dir)
 			if input_dir.x != 0.0:
