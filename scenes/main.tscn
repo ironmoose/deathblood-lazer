@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1a2b3c4d5e6f"]
+[gd_scene load_steps=4 format=3 uid="uid://b1a2b3c4d5e6f"]
 
 [ext_resource type="PackedScene" uid="uid://cp1ay3rsc3n3" path="res://scenes/player/player.tscn" id="1_player_scene"]
 [ext_resource type="PackedScene" uid="uid://egrunt00001" path="res://scenes/enemies/enemy_grunt.tscn" id="2_enemy_grunt"]
+[ext_resource type="Script" path="res://scripts/managers/wave_manager.gd" id="3_wave_manager"]
 
 [node name="Main" type="Node"]
 
@@ -37,3 +38,7 @@ position = Vector2(480, 180)
 
 [node name="EnemyGrunt3" parent="Game/Entities" instance=ExtResource("2_enemy_grunt")]
 position = Vector2(540, 200)
+
+[node name="WaveManager" type="Node" parent="."]
+script = ExtResource("3_wave_manager")
+enemy_scene = ExtResource("2_enemy_grunt")

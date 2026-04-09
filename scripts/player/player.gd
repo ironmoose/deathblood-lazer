@@ -570,6 +570,17 @@ func is_dead() -> bool:
 	return _state == State.DEAD
 
 
+## Revive this player from DEAD state — resets HP to max, restores
+## visibility, and returns to IDLE. Called by WaveManager on wave clear.
+func revive() -> void:
+	if _state != State.DEAD:
+		return
+	health.initialize()  # resets HP to max
+	_change_state(State.IDLE)
+	modulate.a = 1.0
+	visible = true
+
+
 # ===========================================================================
 # Helpers
 # ===========================================================================
