@@ -34,6 +34,10 @@ const Y_ATTACK_TOLERANCE: float = 15.0
 ## Brief pause in IDLE before re-acquiring a target.
 const IDLE_THINK_TIME: float = 0.4
 
+const RETARGET_INTERVAL: float = 0.5
+const SEPARATION_RADIUS: float = 40.0
+const SEPARATION_FORCE: float = 60.0
+
 ## Mapping from sprite-sheet file base name to animation name.
 const ANIM_MAP: Dictionary = {
 	"Idle": "idle",
@@ -62,6 +66,7 @@ var _state: State = State.IDLE
 var _state_timer: float = 0.0
 var _cooldown_timer: float = 0.0
 var _target: Node2D = null
+var _retarget_timer: float = 0.0
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var shadow: Sprite2D = $Shadow
@@ -117,6 +122,7 @@ func _enter_state(state: State) -> void:
 			_state_timer = IDLE_THINK_TIME
 			_play_anim("idle")
 		State.APPROACH:
+			_retarget_timer = RETARGET_INTERVAL
 			_play_anim("walk")
 		State.ATTACK:
 			hitbox.damage = attack_damage
@@ -169,12 +175,27 @@ func _update_idle(delta: float) -> void:
 			_state_timer = IDLE_THINK_TIME
 
 
-func _update_approach(_delta: float) -> void:
+func _update_approach(delta: float) -> void:
 	if not _target or not is_instance_valid(_target):
 		_target = _find_nearest_player()
 		if not _target:
 			_change_state(State.IDLE)
 			return
+
+	# Periodically re-evaluate target.
+	_retarget_timer -= delta
+	if _retarget_timer <= 0.0:
+		_retarget_timer = RETARGET_INTERVAL
+		var nearest: Node2D = _find_nearest_player()
+		if nearest:
+			if nearest != _target:
+				var current_dist: float = global_position.distance_to(_target.global_position)
+				var nearest_dist: float = global_position.distance_to(nearest.global_position)
+				if nearest_dist < current_dist * 0.6:
+					_target = nearest
+			# If current target is dead, always switch
+			if _target.has_method("is_dead") and _target.is_dead():
+				_target = nearest
 
 	# Check if in attack range and cooldown is done.
 	if _is_in_attack_range(_target) and _cooldown_timer <= 0.0:
@@ -182,22 +203,24 @@ func _update_approach(_delta: float) -> void:
 			_change_state(State.ATTACK)
 			return
 		else:
-			# Denied by group manager, wait briefly.
-			velocity = Vector2.ZERO
+			# Denied by group manager — hold position but separate from allies.
+			velocity = _get_separation_force()
 			move_and_slide()
 			return
 
-	# Move toward target.
-	var dir := _get_direction_to_target(_target)
+	# Move toward target with separation from other enemies.
+	var dir: Vector2 = _get_direction_to_target(_target)
+	var separation: Vector2 = _get_separation_force()
 
 	# Flip sprite to face the target.
 	if dir.x != 0.0:
 		animated_sprite.flip_h = dir.x < 0.0
 
-	velocity = Vector2(
+	var move_velocity: Vector2 = Vector2(
 		dir.x * move_speed,
 		dir.y * move_speed * VERTICAL_SPEED_FACTOR
 	)
+	velocity = move_velocity + separation
 	move_and_slide()
 
 
@@ -252,8 +275,10 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	health.take_damage(amount)
 	# Apply knockback direction.
 	if attacker and is_instance_valid(attacker):
-		var dir: float = sign(global_position.x - (attacker as Node2D).global_position.x)
-		velocity = Vector2(dir * knockback, 0)
+		var attacker_2d := attacker as Node2D
+		if attacker_2d:
+			var dir: float = sign(global_position.x - attacker_2d.global_position.x)
+			velocity = Vector2(dir * knockback, 0.0)
 	HitStop.freeze(0.05)
 	if health.is_dead():
 		_change_state(State.DEATH)
@@ -264,6 +289,20 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 # ===========================================================================
 # AI helpers
 # ===========================================================================
+
+func _get_separation_force() -> Vector2:
+	var force: Vector2 = Vector2.ZERO
+	var neighbors: Array[Node] = get_tree().get_nodes_in_group("enemies")
+	for n: Node in neighbors:
+		var other := n as Node2D
+		if not other or other == self or not is_instance_valid(other):
+			continue
+		var dist: float = global_position.distance_to(other.global_position)
+		if dist < SEPARATION_RADIUS and dist > 0.01:
+			var away: Vector2 = (global_position - other.global_position).normalized()
+			force += away * (1.0 - dist / SEPARATION_RADIUS)
+	return (force * SEPARATION_FORCE).limit_length(SEPARATION_FORCE)
+
 
 func _find_nearest_player() -> Node2D:
 	var players := get_tree().get_nodes_in_group("players")
@@ -287,7 +326,7 @@ func _get_direction_to_target(target: Node2D) -> Vector2:
 
 
 func _is_in_attack_range(target: Node2D) -> bool:
-	var dist := global_position.distance_to(target.global_position)
+	var dist: float = global_position.distance_to(target.global_position)
 	var y_close: float = absf(global_position.y - target.global_position.y)
 	return dist < attack_range and y_close < Y_ATTACK_TOLERANCE
 
