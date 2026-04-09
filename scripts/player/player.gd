@@ -430,7 +430,8 @@ func _update_attack(delta: float) -> void:
 			var progress: float = float(animated_sprite.frame) / float(frame_count - 1)
 			if progress >= 0.6:
 				var input_dir: Vector2 = _get_input_direction()
-				if input_dir.length() > 0.001:
+				var attacking: bool = Input.is_action_pressed(_input_prefix + "light") or Input.is_action_pressed(_input_prefix + "heavy")
+				if input_dir.length() > 0.001 and not attacking:
 					_change_state(State.MOVE)
 					return
 
