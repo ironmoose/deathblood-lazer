@@ -12,7 +12,7 @@ enum State { IDLE, APPROACH, ATTACK, STAGGER, DEATH }
 
 @export var max_hp: int = 30
 @export var move_speed: float = 40.0
-@export var attack_range: float = 35.0
+@export var attack_range: float = 55.0
 @export var attack_damage: int = 10
 @export var knockback_force: float = 80.0
 @export var stagger_duration: float = 0.3
@@ -37,6 +37,13 @@ const IDLE_THINK_TIME: float = 0.4
 const RETARGET_INTERVAL: float = 0.5
 const SEPARATION_RADIUS: float = 40.0
 const SEPARATION_FORCE: float = 60.0
+
+## Enemies stop approaching when this close to target.
+const STANDOFF_DISTANCE: float = 55.0
+## When waiting (denied attack), drift to this distance from target.
+const ORBIT_DISTANCE: float = 70.0
+## Force pushing enemy away from player when too close.
+const PLAYER_REPEL_FORCE: float = 80.0
 
 ## Mapping from sprite-sheet file base name to animation name.
 const ANIM_MAP: Dictionary = {
@@ -203,24 +210,49 @@ func _update_approach(delta: float) -> void:
 			_change_state(State.ATTACK)
 			return
 		else:
-			# Denied by group manager — hold position but separate from allies.
-			velocity = _get_separation_force()
+			# Denied by group manager — back off to orbit distance and spread.
+			var to_target: Vector2 = _target.global_position - global_position
+			var dist_to_target: float = to_target.length()
+			var away_dir: Vector2 = Vector2.ZERO
+			if dist_to_target > 0.01:
+				away_dir = -to_target.normalized()
+			# Push away if too close to the player.
+			var repel: Vector2 = Vector2.ZERO
+			if dist_to_target < ORBIT_DISTANCE:
+				repel = away_dir * PLAYER_REPEL_FORCE * (1.0 - dist_to_target / ORBIT_DISTANCE)
+			velocity = repel + _get_separation_force()
+			# Keep facing the target.
+			if to_target.x != 0.0:
+				animated_sprite.flip_h = to_target.x < 0.0
 			move_and_slide()
 			return
 
 	# Move toward target with separation from other enemies.
 	var dir: Vector2 = _get_direction_to_target(_target)
 	var separation: Vector2 = _get_separation_force()
+	var dist_to_target: float = global_position.distance_to(_target.global_position)
 
 	# Flip sprite to face the target.
 	if dir.x != 0.0:
 		animated_sprite.flip_h = dir.x < 0.0
 
-	var move_velocity: Vector2 = Vector2(
-		dir.x * move_speed,
-		dir.y * move_speed * VERTICAL_SPEED_FACTOR
-	)
-	velocity = move_velocity + separation
+	var move_velocity: Vector2
+	if dist_to_target <= STANDOFF_DISTANCE:
+		# Close enough — don't push into the player, just apply separation.
+		move_velocity = Vector2.ZERO
+	else:
+		move_velocity = Vector2(
+			dir.x * move_speed,
+			dir.y * move_speed * VERTICAL_SPEED_FACTOR
+		)
+
+	# Add repel force if too close to player.
+	var repel: Vector2 = Vector2.ZERO
+	if dist_to_target < STANDOFF_DISTANCE * 0.7:
+		var away: Vector2 = (global_position - _target.global_position).normalized()
+		repel = away * PLAYER_REPEL_FORCE
+
+	velocity = move_velocity + separation + repel
 	move_and_slide()
 
 
