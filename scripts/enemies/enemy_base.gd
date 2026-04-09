@@ -61,7 +61,7 @@ const ATTACK_ANIM_FPS: float = 12.0
 var _state: State = State.IDLE
 var _state_timer: float = 0.0
 var _cooldown_timer: float = 0.0
-var _target: Node = null
+var _target: Node2D = null
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var shadow: Sprite2D = $Shadow
@@ -252,7 +252,7 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	health.take_damage(amount)
 	# Apply knockback direction.
 	if attacker and is_instance_valid(attacker):
-		var dir := sign(global_position.x - attacker.global_position.x)
+		var dir: float = sign(global_position.x - (attacker as Node2D).global_position.x)
 		velocity = Vector2(dir * knockback, 0)
 	HitStop.freeze(0.05)
 	if health.is_dead():
@@ -265,11 +265,11 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 # AI helpers
 # ===========================================================================
 
-func _find_nearest_player() -> Node:
+func _find_nearest_player() -> Node2D:
 	var players := get_tree().get_nodes_in_group("players")
-	var closest: Node = null
+	var closest: Node2D = null
 	var closest_dist: float = INF
-	for p in players:
+	for p: Node2D in players:
 		if not is_instance_valid(p):
 			continue
 		# Skip dead players.
@@ -282,14 +282,14 @@ func _find_nearest_player() -> Node:
 	return closest
 
 
-func _get_direction_to_target(target: Node) -> Vector2:
+func _get_direction_to_target(target: Node2D) -> Vector2:
 	return (target.global_position - global_position).normalized()
 
 
-func _is_in_attack_range(target: Node) -> bool:
+func _is_in_attack_range(target: Node2D) -> bool:
 	var dist := global_position.distance_to(target.global_position)
-	var y_close := abs(global_position.y - target.global_position.y) < Y_ATTACK_TOLERANCE
-	return dist < attack_range and y_close
+	var y_close: float = absf(global_position.y - target.global_position.y)
+	return dist < attack_range and y_close < Y_ATTACK_TOLERANCE
 
 
 # ===========================================================================

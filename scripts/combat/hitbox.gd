@@ -35,7 +35,7 @@ func _ready() -> void:
 
 func _on_area_entered(area: Area2D) -> void:
 	if area is Hurtbox:
-		var target = area.owner_entity
+		var target: Node = area.owner_entity
 		if target and target != owner_entity and target not in _hit_targets:
 			_hit_targets.append(target)
 			area.take_damage(damage, knockback_force, hitstun_duration, owner_entity)

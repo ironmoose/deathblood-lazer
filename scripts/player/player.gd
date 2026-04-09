@@ -125,6 +125,9 @@ var _buffer_timer: float = 0.0
 ## Generic state timer (used by HURT, KNOCKDOWN, GETUP).
 var _state_timer: float = 0.0
 
+## Cached input prefix (set once in _ready).
+var _input_prefix: String = ""
+
 ## Debug overlay.
 var _debug_label: Label = null
 var _debug_visible: bool = false
@@ -149,7 +152,7 @@ func _ready() -> void:
 	hitbox.owner_entity = self
 	hurtbox.owner_entity = self
 	hurtbox.damage_received.connect(_on_damage_received)
-	health.died.connect(_on_died)
+	_input_prefix = "p%d_" % player_id
 	health.initialize()
 	_change_state(State.IDLE)
 
@@ -312,19 +315,17 @@ func _update_state(delta: float) -> void:
 # ===========================================================================
 
 func _update_idle(_delta: float) -> void:
-	var prefix := "p%d_" % player_id
-
 	# Check combat inputs.
-	if Input.is_action_just_pressed(prefix + "light"):
+	if Input.is_action_just_pressed(_input_prefix + "light"):
 		_change_state(State.ATTACK_1)
 		return
-	if Input.is_action_just_pressed(prefix + "heavy"):
+	if Input.is_action_just_pressed(_input_prefix + "heavy"):
 		_change_state(State.ATTACK_2)
 		return
-	if Input.is_action_just_pressed(prefix + "jump"):
+	if Input.is_action_just_pressed(_input_prefix + "jump"):
 		_change_state(State.JUMP)
 		return
-	if Input.is_action_just_pressed(prefix + "dodge"):
+	if Input.is_action_just_pressed(_input_prefix + "dodge"):
 		_change_state(State.DODGE)
 		return
 
@@ -336,25 +337,24 @@ func _update_idle(_delta: float) -> void:
 
 
 func _update_move(_delta: float) -> void:
-	var prefix := "p%d_" % player_id
 	var input_dir := _get_input_direction()
 
 	# Check combat inputs.
-	if Input.is_action_just_pressed(prefix + "light"):
+	if Input.is_action_just_pressed(_input_prefix + "light"):
 		_change_state(State.ATTACK_1)
 		return
-	if Input.is_action_just_pressed(prefix + "heavy"):
+	if Input.is_action_just_pressed(_input_prefix + "heavy"):
 		_change_state(State.ATTACK_2)
 		return
-	if Input.is_action_just_pressed(prefix + "jump"):
+	if Input.is_action_just_pressed(_input_prefix + "jump"):
 		_change_state(State.JUMP)
 		return
-	if Input.is_action_just_pressed(prefix + "dodge"):
+	if Input.is_action_just_pressed(_input_prefix + "dodge"):
 		_change_state(State.DODGE)
 		return
 
 	# No movement → idle.
-	if input_dir.length() == 0.0:
+	if input_dir.length() < 0.001:
 		_change_state(State.IDLE)
 		return
 
@@ -367,13 +367,11 @@ func _update_move(_delta: float) -> void:
 
 
 func _update_jump(_delta: float) -> void:
-	var prefix := "p%d_" % player_id
-
 	# Allow attacking mid-air.
-	if Input.is_action_just_pressed(prefix + "light"):
+	if Input.is_action_just_pressed(_input_prefix + "light"):
 		_change_state(State.ATTACK_1)
 		return
-	if Input.is_action_just_pressed(prefix + "heavy"):
+	if Input.is_action_just_pressed(_input_prefix + "heavy"):
 		_change_state(State.ATTACK_2)
 		return
 
@@ -389,8 +387,6 @@ func _update_jump(_delta: float) -> void:
 
 
 func _update_attack(delta: float) -> void:
-	var prefix := "p%d_" % player_id
-
 	# Position hitbox in front of player based on facing direction.
 	hitbox.position.x = 30.0 if not animated_sprite.flip_h else -30.0
 
@@ -399,12 +395,14 @@ func _update_attack(delta: float) -> void:
 		_combo_timer -= delta
 		if _combo_timer <= 0.0:
 			_combo_count = 0
+			_buffered_input = &""
+			_buffer_timer = 0.0
 
 	# Buffer attack input during animation.
-	if Input.is_action_just_pressed(prefix + "light"):
+	if Input.is_action_just_pressed(_input_prefix + "light"):
 		_buffered_input = &"light"
 		_buffer_timer = INPUT_BUFFER_TIME
-	if Input.is_action_just_pressed(prefix + "heavy"):
+	if Input.is_action_just_pressed(_input_prefix + "heavy"):
 		_buffered_input = &"heavy"
 		_buffer_timer = INPUT_BUFFER_TIME
 
@@ -557,7 +555,7 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	health.take_damage(amount)
 	# Apply knockback direction.
 	if attacker and is_instance_valid(attacker):
-		var dir := sign(global_position.x - attacker.global_position.x)
+		var dir: float = sign(global_position.x - (attacker as Node2D).global_position.x)
 		velocity = Vector2(dir * knockback, 0)
 	HitStop.freeze(0.05)
 	if health.is_dead():
@@ -570,11 +568,6 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 
 func is_dead() -> bool:
 	return _state == State.DEAD
-
-
-## Callback wired to [HealthComponent.died].
-func _on_died() -> void:
-	_change_state(State.DEAD)
 
 
 # ===========================================================================
@@ -599,10 +592,9 @@ func _apply_movement(input_dir: Vector2) -> void:
 ## Read the four directional actions for this player and return a normalised
 ## direction vector.
 func _get_input_direction() -> Vector2:
-	var prefix := "p%d_" % player_id
 	var dir := Vector2.ZERO
-	dir.x = Input.get_axis(prefix + "move_left", prefix + "move_right")
-	dir.y = Input.get_axis(prefix + "move_up", prefix + "move_down")
+	dir.x = Input.get_axis(_input_prefix + "move_left", _input_prefix + "move_right")
+	dir.y = Input.get_axis(_input_prefix + "move_up", _input_prefix + "move_down")
 	if dir.length() > 1.0:
 		dir = dir.normalized()
 	return dir
