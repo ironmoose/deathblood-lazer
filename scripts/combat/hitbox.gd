@@ -7,6 +7,8 @@
 class_name Hitbox
 extends Area2D
 
+const Y_HIT_TOLERANCE: float = 28.0
+
 @export var damage: int = 10
 @export var knockback_force: float = 100.0
 @export var hitstun_duration: float = 0.2
@@ -37,5 +39,11 @@ func _on_area_entered(area: Area2D) -> void:
 	if area is Hurtbox:
 		var target: Node = area.owner_entity
 		if target and target != owner_entity and target not in _hit_targets:
+			# Y-axis depth check for 2.5D belt alignment.
+			var owner_2d := owner_entity as Node2D
+			var target_2d := target as Node2D
+			if owner_2d and target_2d:
+				if absf(owner_2d.global_position.y - target_2d.global_position.y) > Y_HIT_TOLERANCE:
+					return
 			_hit_targets.append(target)
 			area.take_damage(damage, knockback_force, hitstun_duration, owner_entity)

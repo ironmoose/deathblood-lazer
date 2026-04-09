@@ -557,7 +557,10 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	if attacker and is_instance_valid(attacker):
 		var dir: float = sign(global_position.x - (attacker as Node2D).global_position.x)
 		velocity = Vector2(dir * knockback, 0)
-	HitStop.freeze(0.05)
+	var _hit_entities: Array = [self]
+	if attacker and is_instance_valid(attacker):
+		_hit_entities.append(attacker)
+	HitStop.freeze(0.05, _hit_entities)
 	if health.is_dead():
 		_change_state(State.DEAD)
 	elif _state == State.KNOCKDOWN:

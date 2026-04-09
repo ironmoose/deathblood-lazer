@@ -29,7 +29,7 @@ const BELT_MAX_Y: float = 235.0
 const VERTICAL_SPEED_FACTOR: float = 0.7
 
 ## Y-axis tolerance for lining up to attack.
-const Y_ATTACK_TOLERANCE: float = 15.0
+const Y_ATTACK_TOLERANCE: float = 25.0
 
 ## Brief pause in IDLE before re-acquiring a target.
 const IDLE_THINK_TIME: float = 0.4
@@ -238,8 +238,12 @@ func _update_approach(delta: float) -> void:
 
 	var move_velocity: Vector2
 	if dist_to_target <= STANDOFF_DISTANCE:
-		# Close enough — don't push into the player, just apply separation.
-		move_velocity = Vector2.ZERO
+		# At standoff — stop X but keep aligning Y if needed.
+		var y_diff: float = _target.global_position.y - global_position.y
+		if absf(y_diff) > Y_ATTACK_TOLERANCE - 5.0:
+			move_velocity = Vector2(0.0, signf(y_diff) * move_speed * VERTICAL_SPEED_FACTOR)
+		else:
+			move_velocity = Vector2.ZERO
 	else:
 		move_velocity = Vector2(
 			dir.x * move_speed,
@@ -311,7 +315,10 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 		if attacker_2d:
 			var dir: float = sign(global_position.x - attacker_2d.global_position.x)
 			velocity = Vector2(dir * knockback, 0.0)
-	HitStop.freeze(0.05)
+	var _hit_entities: Array = [self]
+	if attacker and is_instance_valid(attacker):
+		_hit_entities.append(attacker)
+	HitStop.freeze(0.05, _hit_entities)
 	if health.is_dead():
 		_change_state(State.DEATH)
 	else:
@@ -360,7 +367,7 @@ func _get_direction_to_target(target: Node2D) -> Vector2:
 func _is_in_attack_range(target: Node2D) -> bool:
 	var dist: float = global_position.distance_to(target.global_position)
 	var y_close: float = absf(global_position.y - target.global_position.y)
-	return dist < attack_range and y_close < Y_ATTACK_TOLERANCE
+	return dist <= attack_range and y_close < Y_ATTACK_TOLERANCE
 
 
 # ===========================================================================
