@@ -388,7 +388,7 @@ func _update_jump(_delta: float) -> void:
 
 func _update_attack(delta: float) -> void:
 	# Position hitbox in front of player based on facing direction.
-	hitbox.position.x = 30.0 if not animated_sprite.flip_h else -30.0
+	hitbox.position.x = 22.0 if not animated_sprite.flip_h else -22.0
 
 	# Combo timer countdown.
 	if _combo_timer > 0.0:
