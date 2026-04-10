@@ -21,6 +21,7 @@ InputManager="*res://scripts/managers/input_manager.gd"
 HitStop="*res://scripts/combat/hitstop.gd"
 EnemyGroupManager="*res://scripts/managers/enemy_group_manager.gd"
 PauseOverlay="*res://scripts/ui/pause_overlay.gd"
+ScreenFX="*res://scripts/combat/screen_fx.gd"
 
 [display]
 

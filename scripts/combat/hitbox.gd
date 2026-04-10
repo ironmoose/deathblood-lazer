@@ -7,6 +7,8 @@
 class_name Hitbox
 extends Area2D
 
+signal damage_dealt(amount: int, target: Node)
+
 const Y_HIT_TOLERANCE: float = 28.0
 
 @export var damage: int = 10
@@ -47,3 +49,4 @@ func _on_area_entered(area: Area2D) -> void:
 					return
 			_hit_targets.append(target)
 			area.take_damage(damage, knockback_force, hitstun_duration, owner_entity)
+			damage_dealt.emit(damage, target)

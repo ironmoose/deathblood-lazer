@@ -80,6 +80,12 @@ const KNOCKDOWN_DURATION: float = 0.8
 ## Getup duration (recovery before returning to idle).
 const GETUP_DURATION: float = 0.5
 
+## Special move damage (matches a heavy hit).
+const SPECIAL_DAMAGE: int = 50
+
+## Special meter component — created in _ready.
+var _special_meter: SpecialMeter = null
+
 # ---------------------------------------------------------------------------
 # State machine
 # ---------------------------------------------------------------------------
@@ -92,6 +98,7 @@ enum State {
 	ATTACK_2,
 	ATTACK_3,
 	DODGE,
+	SPECIAL,
 	HURT,
 	KNOCKDOWN,
 	GETUP,
@@ -154,6 +161,10 @@ func _ready() -> void:
 	hurtbox.damage_received.connect(_on_damage_received)
 	_input_prefix = "p%d_" % player_id
 	health.initialize()
+	# Create and wire special meter.
+	_special_meter = SpecialMeter.new()
+	add_child(_special_meter)
+	hitbox.damage_dealt.connect(_on_damage_dealt)
 	_change_state(State.IDLE)
 
 
@@ -257,6 +268,19 @@ func _enter_state(state: State) -> void:
 			_is_dodging = true
 			_dodge_timer = DODGE_DURATION
 			_play_anim("run")
+		State.SPECIAL:
+			if not _special_meter.consume_segment():
+				_change_state(State.IDLE)
+				return
+			_combo_count = 0
+			_combo_timer = 0.0
+			_buffered_input = &""
+			_buffer_timer = 0.0
+			hitbox.damage = SPECIAL_DAMAGE
+			hitbox.activate()
+			_play_anim("attack_3")
+			ScreenFX.flash(0.15, Color.WHITE)
+			ScreenFX.shake(0.3, 8.0)
 		State.HURT:
 			_state_timer = HURT_DURATION
 			_play_anim("hurt")
@@ -282,7 +306,7 @@ func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 				_jump_height = 0.0
 				_is_jumping = false
 				animated_sprite.offset.y = -FRAME_SIZE / 2.0
-		State.ATTACK_1, State.ATTACK_2, State.ATTACK_3:
+		State.ATTACK_1, State.ATTACK_2, State.ATTACK_3, State.SPECIAL:
 			hitbox.deactivate()
 			if _combo_timer <= 0.0:
 				_combo_count = 0
@@ -310,6 +334,8 @@ func _update_state(delta: float) -> void:
 			_update_attack(delta)
 		State.DODGE:
 			_update_dodge(delta)
+		State.SPECIAL:
+			_update_special(delta)
 		State.HURT:
 			_update_hurt(delta)
 		State.KNOCKDOWN:
@@ -338,6 +364,10 @@ func _update_idle(_delta: float) -> void:
 	if Input.is_action_just_pressed(_input_prefix + "dodge"):
 		_change_state(State.DODGE)
 		return
+	if Input.is_action_just_pressed(_input_prefix + "special"):
+		if _special_meter.can_use_special():
+			_change_state(State.SPECIAL)
+			return
 
 	# Check movement.
 	var input_dir := _get_input_direction()
@@ -362,6 +392,10 @@ func _update_move(_delta: float) -> void:
 	if Input.is_action_just_pressed(_input_prefix + "dodge"):
 		_change_state(State.DODGE)
 		return
+	if Input.is_action_just_pressed(_input_prefix + "special"):
+		if _special_meter.can_use_special():
+			_change_state(State.SPECIAL)
+			return
 
 	# No movement → idle.
 	if input_dir.length() < 0.001:
@@ -451,6 +485,15 @@ func _update_attack(delta: float) -> void:
 		move_and_slide()
 
 
+func _update_special(_delta: float) -> void:
+	# Position hitbox in front of player.
+	hitbox.position.x = 22.0 if not animated_sprite.flip_h else -22.0
+
+	# No movement during special — player stands and delivers.
+	velocity = Vector2.ZERO
+	move_and_slide()
+
+
 func _update_dodge(delta: float) -> void:
 	_dodge_timer -= delta
 	var dodge_dir := -1.0 if animated_sprite.flip_h else 1.0
@@ -508,6 +551,8 @@ func _on_animation_finished() -> void:
 		State.ATTACK_3:
 			# Combo ends after third hit.
 			_combo_count = 0
+			_on_attack_chain_end()
+		State.SPECIAL:
 			_on_attack_chain_end()
 		State.HURT:
 			_change_state(State.IDLE)
@@ -582,6 +627,8 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	if _state == State.DEAD or _state == State.GETUP:
 		return
 	health.take_damage(amount)
+	if _special_meter:
+		_special_meter.add_points_from_damage_taken(amount)
 	# Apply knockback direction.
 	if attacker and is_instance_valid(attacker):
 		var dir: float = sign(global_position.x - (attacker as Node2D).global_position.x)
@@ -598,6 +645,12 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 		_change_state(State.HURT)
 
 
+## Callback wired to [Hitbox.damage_dealt] — fills special meter when dealing damage.
+func _on_damage_dealt(amount: int, _target: Node) -> void:
+	if _special_meter:
+		_special_meter.add_points_from_damage_dealt(amount)
+
+
 func is_dead() -> bool:
 	return _state == State.DEAD
 
@@ -608,6 +661,8 @@ func revive() -> void:
 	if _state != State.DEAD:
 		return
 	health.initialize()  # resets HP to max
+	if _special_meter:
+		_special_meter.reset()
 	_change_state(State.IDLE)
 	modulate.a = 1.0
 	visible = true
@@ -672,7 +727,10 @@ func _update_debug() -> void:
 			extra = " (air)"
 		if _buffered_input != &"":
 			extra += " buf:" + str(_buffered_input)
-		_debug_label.text = "P%d %s%s" % [player_id, state_name, extra]
+		var meter_info: String = ""
+		if _special_meter:
+			meter_info = " M:%d" % _special_meter.get_segments()
+		_debug_label.text = "P%d %s%s%s" % [player_id, state_name, extra, meter_info]
 
 
 # ===========================================================================
