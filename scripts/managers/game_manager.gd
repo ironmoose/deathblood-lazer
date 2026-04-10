@@ -16,6 +16,9 @@ signal life_lost(remaining: int)
 ## Emitted when shared lives reach zero.
 signal game_over
 
+## Emitted when a player's score changes. Carries the player id and their new score.
+signal score_changed(player_id: int, new_score: int)
+
 ## Current state of the game.
 var current_state: GameState = GameState.MENU
 
@@ -53,6 +56,7 @@ func resume_game() -> void:
 func add_score(player_id: int, amount: int) -> void:
 	if player_id >= 0 and player_id < scores.size():
 		scores[player_id] += amount
+		score_changed.emit(player_id, scores[player_id])
 
 
 ## Decrement shared lives by one. Emits [signal life_lost] and, if lives
