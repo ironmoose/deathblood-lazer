@@ -86,6 +86,9 @@ const SPECIAL_DAMAGE: int = 50
 ## Special meter component — created in _ready.
 var _special_meter: SpecialMeter = null
 
+## Currently equipped weapon — null means bare-fists (basic special only).
+var _weapon: WeaponData = null
+
 # ---------------------------------------------------------------------------
 # State machine
 # ---------------------------------------------------------------------------
@@ -652,6 +655,12 @@ func _on_damage_dealt(amount: int, _target: Node) -> void:
 
 func is_dead() -> bool:
 	return _state == State.DEAD
+
+
+## Equip a weapon for this player. Pass null to revert to bare-fists.
+## Call this from the camp / merchant screen before a wave starts.
+func equip_weapon(weapon: WeaponData) -> void:
+	_weapon = weapon
 
 
 ## Revive this player from DEAD state — resets HP to max, restores

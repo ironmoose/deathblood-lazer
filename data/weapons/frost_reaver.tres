@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_frost"]
+
+[resource]
+script = ExtResource("1_frost")
+weapon_name = "Frost Reaver"
+category = 0
+primary_sub = 0
+secondary_sub = 2
+t1_name = "Ice Slash"
+t1_description = "A melee strike laced with frost. Deals 30 damage and briefly slows the target."
+t1_damage = 30
+t1_heal = 0
+t1_duration = 1.0
+t1_effect_scene = null
+t2_name = "Frost Nova"
+t2_description = "An AoE burst of freezing energy. Deals 50 damage and freezes nearby enemies for 2 seconds."
+t2_damage = 50
+t2_heal = 0
+t2_duration = 2.0
+t2_effect_scene = null
+t3_name = "Blizzard Rampage"
+t3_description = "A furious forward dash through enemies, dealing 100 damage and freezing all hit targets."
+t3_damage = 100
+t3_heal = 0
+t3_duration = 2.5
+t3_effect_scene = null
