@@ -192,12 +192,17 @@ func _physics_process(delta: float) -> void:
 			_jump_velocity = 0.0
 			_combo_count = 0  # reset combo so ground combos start fresh
 			# Transition out of aerial state on landing.
-			if _state in [State.JUMP, State.ATTACK_1, State.ATTACK_2, State.ATTACK_3]:
-				var input_dir := _get_input_direction()
-				if input_dir.length() > 0.0:
-					_change_state(State.MOVE)
-				else:
-					_change_state(State.IDLE)
+			match _state:
+				State.JUMP, State.ATTACK_1, State.ATTACK_2, State.ATTACK_3:
+					var input_dir := _get_input_direction()
+					if input_dir.length() > 0.0:
+						_change_state(State.MOVE)
+					else:
+						_change_state(State.IDLE)
+				State.HURT, State.KNOCKDOWN, State.DEAD:
+					# Already in a damage state — don't interrupt.
+					# Jump vars are cleared above; sprite lands naturally.
+					pass
 
 		# Apply jump height as visual offset on the sprite (negative = up).
 		animated_sprite.offset.y = (-FRAME_SIZE / 2.0) + _jump_height
@@ -305,10 +310,10 @@ func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 		State.DODGE:
 			_is_dodging = false
 		State.JUMP:
-			# Keep the jump arc alive when transitioning to an air attack.
-			# The arc physics in _physics_process continues independently;
-			# clearing here would snap the character to the ground.
-			if next_state not in [State.ATTACK_1, State.ATTACK_2, State.ATTACK_3]:
+			# Keep the jump arc alive when transitioning to an air attack or a
+			# damage state — the arc physics in _physics_process continues
+			# independently; clearing here would snap the sprite to the ground.
+			if next_state not in [State.ATTACK_1, State.ATTACK_2, State.ATTACK_3, State.HURT, State.KNOCKDOWN, State.DEAD]:
 				_jump_height = 0.0
 				_is_jumping = false
 				animated_sprite.offset.y = -FRAME_SIZE / 2.0
@@ -316,8 +321,10 @@ func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 			hitbox.deactivate()
 			if _combo_timer <= 0.0:
 				_combo_count = 0
-			# If airborne and transitioning to a non-aerial state, land immediately.
-			if _is_jumping and next_state not in [State.JUMP, State.ATTACK_1, State.ATTACK_2, State.ATTACK_3]:
+			# If airborne and transitioning to a non-aerial, non-damage state,
+			# land immediately.  Damage states let the arc continue so the hit
+			# reaction plays at height before the player falls to the ground.
+			if _is_jumping and next_state not in [State.JUMP, State.ATTACK_1, State.ATTACK_2, State.ATTACK_3, State.HURT, State.KNOCKDOWN, State.DEAD]:
 				_is_jumping = false
 				_jump_height = 0.0
 				_jump_velocity = 0.0
