@@ -135,6 +135,9 @@ var _buffer_timer: float = 0.0
 ## Generic state timer (used by HURT, KNOCKDOWN, GETUP).
 var _state_timer: float = 0.0
 
+## Which special tier was selected (1 = T1, 2 = T2, 3 = T3).
+var _special_tier: int = 1
+
 ## Cached input prefix (set once in _ready).
 var _input_prefix: String = ""
 
@@ -268,19 +271,22 @@ func _enter_state(state: State) -> void:
 			_dodge_timer = DODGE_DURATION
 			_play_anim("run")
 		State.SPECIAL:
-			print("[P%d] Entering SPECIAL state" % player_id)
-			if not _special_meter.consume_segment():
+			if not _special_meter.use_tier(_special_tier):
 				_change_state(State.IDLE)
 				return
 			_combo_count = 0
 			_combo_timer = 0.0
 			_buffered_input = &""
 			_buffer_timer = 0.0
-			hitbox.damage = SPECIAL_DAMAGE
+			if _weapon:
+				hitbox.damage = _weapon.get_tier_damage(_special_tier)
+			else:
+				hitbox.damage = SPECIAL_DAMAGE * _special_tier
 			hitbox.activate()
-			_play_anim("attack_3")
-			ScreenFX.flash(0.15, Color.WHITE)
-			ScreenFX.shake(0.3, 8.0)
+			_play_anim("attack_3")  # TODO: tier-specific animations later
+			var flash_color: Color = Color.WHITE if _special_tier < 3 else Color.GOLD
+			ScreenFX.flash(0.1 + 0.05 * float(_special_tier), flash_color)
+			ScreenFX.shake(0.2 + 0.1 * float(_special_tier), 6.0 + 2.0 * float(_special_tier))
 		State.HURT:
 			_state_timer = HURT_DURATION
 			_play_anim("hurt")
@@ -365,10 +371,13 @@ func _update_idle(_delta: float) -> void:
 		_change_state(State.DODGE)
 		return
 	if Input.is_action_just_pressed(_input_prefix + "special"):
-		print("[P%d IDLE] Special pressed! can_use=%s segments=%d points=%d" % [player_id, _special_meter.can_use_special(), _special_meter.get_segments(), _special_meter.get_points()])
-		if _special_meter.can_use_special():
+		var tier: int = _determine_special_tier()
+		if _special_meter.can_use_tier(tier):
+			_special_tier = tier
 			_change_state(State.SPECIAL)
 			return
+		else:
+			ScreenFX.flash(0.1, Color.RED)
 
 	# Check movement.
 	var input_dir := _get_input_direction()
@@ -394,10 +403,13 @@ func _update_move(_delta: float) -> void:
 		_change_state(State.DODGE)
 		return
 	if Input.is_action_just_pressed(_input_prefix + "special"):
-		print("[P%d MOVE] Special pressed! can_use=%s segments=%d points=%d" % [player_id, _special_meter.can_use_special(), _special_meter.get_segments(), _special_meter.get_points()])
-		if _special_meter.can_use_special():
+		var tier: int = _determine_special_tier()
+		if _special_meter.can_use_tier(tier):
+			_special_tier = tier
 			_change_state(State.SPECIAL)
 			return
+		else:
+			ScreenFX.flash(0.1, Color.RED)
 
 	# No movement → idle.
 	if input_dir.length() < 0.001:
@@ -679,6 +691,16 @@ func revive() -> void:
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
+## Return the special tier based on which modifier buttons are held at activation.
+## Heavy (Y) takes priority over light (X) so both-held -> T3.
+func _determine_special_tier() -> int:
+	if Input.is_action_pressed(_input_prefix + "heavy"):
+		return 3
+	if Input.is_action_pressed(_input_prefix + "light"):
+		return 2
+	return 1
+
 
 ## Play an animation with a has_animation guard.
 func _play_anim(anim_name: String) -> void:
