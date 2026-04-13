@@ -144,6 +144,10 @@ var _input_prefix: String = ""
 ## Debug overlay.
 var _debug_label: Label = null
 
+## Cached default hitbox collision shape size and position for restoration after specials.
+var _default_hitbox_size: Vector2 = Vector2(18.0, 20.0)
+var _default_hitbox_pos: Vector2 = Vector2(22.0, -26.0)
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var shadow: Sprite2D = $Shadow
 @onready var hitbox: Hitbox = $Hitbox
@@ -171,6 +175,20 @@ func _ready() -> void:
 	add_child(_special_meter)
 	hitbox.damage_dealt.connect(_on_damage_dealt)
 	_change_state(State.IDLE)
+
+	# Duplicate the hitbox shape so each player instance has its own — shared
+	# sub-resources would otherwise affect both players simultaneously.
+	var hitbox_shape_init: CollisionShape2D = hitbox.get_node("CollisionShape2D") as CollisionShape2D
+	if hitbox_shape_init and hitbox_shape_init.shape:
+		hitbox_shape_init.shape = hitbox_shape_init.shape.duplicate()
+		if hitbox_shape_init.shape is RectangleShape2D:
+			_default_hitbox_size = (hitbox_shape_init.shape as RectangleShape2D).size
+			_default_hitbox_pos = hitbox_shape_init.position
+
+	# Auto-equip Frost Reaver for testing.
+	var frost_reaver: WeaponData = load("res://data/weapons/frost_reaver.tres") as WeaponData
+	if frost_reaver:
+		equip_weapon(frost_reaver)
 
 
 func _physics_process(delta: float) -> void:
@@ -289,6 +307,33 @@ func _enter_state(state: State) -> void:
 				hitbox.damage = SPECIAL_DAMAGE * _special_tier
 			hitbox.activate()
 			_play_anim("attack_3")  # TODO: tier-specific animations later
+			# Scale hitbox collision shape by tier.
+			var hitbox_shape: CollisionShape2D = hitbox.get_node("CollisionShape2D") as CollisionShape2D
+			if hitbox_shape and hitbox_shape.shape is RectangleShape2D:
+				var rect: RectangleShape2D = hitbox_shape.shape as RectangleShape2D
+				match _special_tier:
+					1:
+						rect.size = _default_hitbox_size
+						hitbox_shape.position = _default_hitbox_pos
+					2:
+						rect.size = Vector2(60.0, 50.0)
+						hitbox_shape.position = Vector2(0.0, -26.0)
+					3:
+						rect.size = Vector2(200.0, 80.0)
+						hitbox_shape.position = Vector2(0.0, -26.0)
+			# Spawn VFX.
+			var vfx: SpecialVFX = SpecialVFX.new()
+			match _special_tier:
+				1:
+					vfx.setup(30.0, Color.CYAN, 0.3)
+					vfx.position = Vector2(22.0 if not animated_sprite.flip_h else -22.0, -30.0)
+				2:
+					vfx.setup(60.0, Color.DEEP_SKY_BLUE, 0.4)
+					vfx.position = Vector2(0.0, -30.0)
+				3:
+					vfx.setup(120.0, Color.GOLD, 0.5)
+					vfx.position = Vector2(0.0, -30.0)
+			add_child(vfx)
 			var flash_color: Color = Color.WHITE if _special_tier < 3 else Color.GOLD
 			ScreenFX.flash(0.1 + 0.05 * float(_special_tier), flash_color)
 			ScreenFX.shake(0.2 + 0.1 * float(_special_tier), 6.0 + 2.0 * float(_special_tier))
@@ -319,6 +364,11 @@ func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 				animated_sprite.offset.y = -FRAME_SIZE / 2.0
 		State.ATTACK_1, State.ATTACK_2, State.ATTACK_3, State.SPECIAL:
 			hitbox.deactivate()
+			# Restore default hitbox size after any attack or special.
+			var hitbox_shape_exit: CollisionShape2D = hitbox.get_node("CollisionShape2D") as CollisionShape2D
+			if hitbox_shape_exit and hitbox_shape_exit.shape is RectangleShape2D:
+				(hitbox_shape_exit.shape as RectangleShape2D).size = _default_hitbox_size
+				hitbox_shape_exit.position = _default_hitbox_pos
 			if _combo_timer <= 0.0:
 				_combo_count = 0
 			# If airborne and transitioning to a non-aerial, non-damage state,
@@ -507,8 +557,11 @@ func _update_attack(delta: float) -> void:
 
 
 func _update_special(_delta: float) -> void:
-	# Position hitbox in front of player.
-	hitbox.position.x = 22.0 if not animated_sprite.flip_h else -22.0
+	# Position hitbox in front of player for T1; centered for T2/T3.
+	if _special_tier == 1:
+		hitbox.position.x = 22.0 if not animated_sprite.flip_h else -22.0
+	else:
+		hitbox.position.x = 0.0
 
 	# No movement during special — player stands and delivers.
 	velocity = Vector2.ZERO
@@ -517,7 +570,7 @@ func _update_special(_delta: float) -> void:
 
 func _update_dodge(delta: float) -> void:
 	_dodge_timer -= delta
-	var dodge_dir := -1.0 if animated_sprite.flip_h else 1.0
+	var dodge_dir: float = -1.0 if animated_sprite.flip_h else 1.0
 	velocity = Vector2(dodge_dir * DODGE_SPEED, 0)
 	move_and_slide()
 
@@ -652,7 +705,7 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 		_special_meter.add_points_from_damage_taken(amount)
 	# Apply knockback direction.
 	if attacker and is_instance_valid(attacker):
-		var dir: float = sign(global_position.x - (attacker as Node2D).global_position.x)
+		var dir: float = signf(global_position.x - (attacker as Node2D).global_position.x)
 		velocity = Vector2(dir * knockback, 0)
 	var _hit_entities: Array[Node] = [self]
 	if attacker and is_instance_valid(attacker):
