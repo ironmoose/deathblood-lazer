@@ -269,6 +269,7 @@ func _enter_state(state: State) -> void:
 			_dodge_timer = DODGE_DURATION
 			_play_anim("run")
 		State.SPECIAL:
+			print("[P%d] Entering SPECIAL state" % player_id)
 			if not _special_meter.consume_segment():
 				_change_state(State.IDLE)
 				return
@@ -365,6 +366,7 @@ func _update_idle(_delta: float) -> void:
 		_change_state(State.DODGE)
 		return
 	if Input.is_action_just_pressed(_input_prefix + "special"):
+		print("[P%d IDLE] Special pressed! can_use=%s segments=%d points=%d" % [player_id, _special_meter.can_use_special(), _special_meter.get_segments(), _special_meter.get_points()])
 		if _special_meter.can_use_special():
 			_change_state(State.SPECIAL)
 			return
@@ -393,6 +395,7 @@ func _update_move(_delta: float) -> void:
 		_change_state(State.DODGE)
 		return
 	if Input.is_action_just_pressed(_input_prefix + "special"):
+		print("[P%d MOVE] Special pressed! can_use=%s segments=%d points=%d" % [player_id, _special_meter.can_use_special(), _special_meter.get_segments(), _special_meter.get_points()])
 		if _special_meter.can_use_special():
 			_change_state(State.SPECIAL)
 			return

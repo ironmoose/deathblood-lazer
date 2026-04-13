@@ -306,6 +306,7 @@ func _on_animation_finished() -> void:
 # ===========================================================================
 
 func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker: Node) -> void:
+	print("[Enemy] Damage received: %d HP:%d/%d state:%s attacker:%s" % [amount, health.current_hp, health.max_hp, State.keys()[_state], str(attacker)])
 	if _state == State.DEATH:
 		return
 	health.take_damage(amount)

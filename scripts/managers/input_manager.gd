@@ -34,6 +34,11 @@ func _input(event: InputEvent) -> void:
 		_debug_layer.visible = _debug_visible
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton and event.pressed:
+		print("[InputManager] Joypad button pressed: device=%d button_index=%d" % [event.device, event.button_index])
+
+
 ## Returns the physical device index assigned to the given player (0-indexed).
 ## Returns -1 if no controller is assigned to that slot.
 func get_device_for_player(player_id: int) -> int:

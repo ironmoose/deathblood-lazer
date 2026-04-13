@@ -10,7 +10,7 @@ extends Node
 signal meter_changed(current_points: int, max_points: int, segments: int)
 
 ## Points needed to fill one segment.
-const POINTS_PER_SEGMENT: int = 50
+const POINTS_PER_SEGMENT: int = 10
 
 ## Maximum number of segments.
 const MAX_SEGMENTS: int = 3
