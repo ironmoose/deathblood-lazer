@@ -8,6 +8,8 @@ class_name SpecialMeter
 extends Node
 
 signal meter_changed(current_points: int, max_points: int, segments: int)
+signal meter_full
+signal meter_empty
 
 ## Points needed to fill one segment.
 const POINTS_PER_SEGMENT: int = 10
@@ -41,11 +43,27 @@ func can_use_special() -> bool:
 	return get_segments() >= 1
 
 
+func can_use_tier(tier: int) -> bool:
+	return get_segments() >= tier
+
+
 func consume_segment() -> bool:
 	if not can_use_special():
 		return false
 	_current_points -= POINTS_PER_SEGMENT
 	meter_changed.emit(_current_points, _max_points, get_segments())
+	if _current_points == 0:
+		meter_empty.emit()
+	return true
+
+
+func use_tier(tier: int) -> bool:
+	if not can_use_tier(tier):
+		return false
+	_current_points -= tier * POINTS_PER_SEGMENT
+	meter_changed.emit(_current_points, _max_points, get_segments())
+	if _current_points == 0:
+		meter_empty.emit()
 	return true
 
 
@@ -53,12 +71,16 @@ func add_points_from_damage_dealt(damage: int) -> void:
 	var points: int = int(float(damage) * DEAL_DAMAGE_MULTIPLIER)
 	_current_points = mini(_current_points + points, _max_points)
 	meter_changed.emit(_current_points, _max_points, get_segments())
+	if _current_points == _max_points:
+		meter_full.emit()
 
 
 func add_points_from_damage_taken(damage: int) -> void:
 	var points: int = int(float(damage) * TAKE_DAMAGE_MULTIPLIER)
 	_current_points = mini(_current_points + points, _max_points)
 	meter_changed.emit(_current_points, _max_points, get_segments())
+	if _current_points == _max_points:
+		meter_full.emit()
 
 
 func reset() -> void:
