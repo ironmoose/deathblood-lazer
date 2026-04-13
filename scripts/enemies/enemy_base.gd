@@ -75,6 +75,9 @@ var _cooldown_timer: float = 0.0
 var _target: Node2D = null
 var _retarget_timer: float = 0.0
 
+## Debug overlay.
+var _debug_label: Label = null
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var shadow: Sprite2D = $Shadow
 @onready var hitbox: Hitbox = $Hitbox
@@ -88,6 +91,7 @@ func _ready() -> void:
 	animated_sprite.offset = Vector2(0, -FRAME_SIZE / 2.0)
 	animated_sprite.animation_finished.connect(_on_animation_finished)
 	_setup_shadow()
+	_setup_debug_label()
 	hitbox.owner_entity = self
 	hitbox.damage = attack_damage
 	hitbox.knockback_force = knockback_force
@@ -107,6 +111,9 @@ func _physics_process(delta: float) -> void:
 	# Belt clamp and depth sort.
 	position.y = clampf(position.y, BELT_MIN_Y, BELT_MAX_Y)
 	z_index = int(position.y)
+
+	# Debug overlay.
+	_update_debug()
 
 
 # ===========================================================================
@@ -369,6 +376,48 @@ func _is_in_attack_range(target: Node2D) -> bool:
 	var dist: float = global_position.distance_to(target.global_position)
 	var y_close: float = absf(global_position.y - target.global_position.y)
 	return dist <= attack_range and y_close < Y_ATTACK_TOLERANCE
+
+
+# ===========================================================================
+# Debug overlay
+# ===========================================================================
+
+func _setup_debug_label() -> void:
+	_debug_label = Label.new()
+	_debug_label.add_theme_font_size_override("font_size", 10)
+	_debug_label.add_theme_color_override("font_color", Color.TOMATO)
+	_debug_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_debug_label.add_theme_constant_override("outline_size", 2)
+	_debug_label.position = Vector2(-30, -FRAME_SIZE - 12)
+	_debug_label.visible = false
+	add_child(_debug_label)
+
+
+func _update_debug() -> void:
+	if not _debug_label:
+		return
+	var debug_on: bool = InputManager.entity_debug_visible
+	_debug_label.visible = debug_on
+	if not debug_on:
+		return
+
+	var state_name: String = State.keys()[_state] as String
+	var hp_current: int = health.current_hp
+	var hp_max: int = health.max_hp
+	var target_name: String = "none"
+	if _target and is_instance_valid(_target):
+		target_name = _target.name
+	var hitbox_on: bool = hitbox.monitoring
+	var hurtbox_mode: String = ProcessMode.keys()[hurtbox.process_mode] as String
+	var entity_mode: String = ProcessMode.keys()[process_mode] as String
+	var cooldown_str: String = "%.2f" % maxf(_cooldown_timer, 0.0)
+
+	_debug_label.text = (
+		"%s\nHP:%d/%d tgt:%s\nhit:%s hurt:%s\nproc:%s cd:%s"
+		% [state_name, hp_current, hp_max, target_name,
+		   "ON" if hitbox_on else "off",
+		   hurtbox_mode, entity_mode, cooldown_str]
+	)
 
 
 # ===========================================================================

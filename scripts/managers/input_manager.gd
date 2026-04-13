@@ -9,6 +9,9 @@
 ## controllers are connected and their player assignments.
 extends Node
 
+## Emitted when the entity state debug overlay is toggled.
+signal entity_debug_toggled(visible: bool)
+
 ## Emitted after device assignments change so other systems can react.
 signal devices_remapped(p1_device: int, p2_device: int)
 
@@ -19,6 +22,9 @@ var player_devices: Array[int] = [-1, -1]
 var _debug_layer: CanvasLayer
 var _debug_label: Label
 var _debug_visible: bool = false
+
+## Whether entity state debug labels are visible (toggled by F1).
+var entity_debug_visible: bool = false
 
 
 func _ready() -> void:
@@ -32,6 +38,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F3:
 		_debug_visible = not _debug_visible
 		_debug_layer.visible = _debug_visible
+	# Toggle entity state debug labels with F1.
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F1:
+		entity_debug_visible = not entity_debug_visible
+		entity_debug_toggled.emit(entity_debug_visible)
 
 
 func _unhandled_input(event: InputEvent) -> void:

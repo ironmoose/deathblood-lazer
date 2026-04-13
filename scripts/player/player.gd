@@ -137,7 +137,6 @@ var _input_prefix: String = ""
 
 ## Debug overlay.
 var _debug_label: Label = null
-var _debug_visible: bool = false
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var shadow: Sprite2D = $Shadow
@@ -208,14 +207,11 @@ func _physics_process(delta: float) -> void:
 	z_index = int(position.y)
 
 	# Debug overlay.
-	if Input.is_action_just_pressed("ui_home"):  # F2 fallback — see _unhandled_input
-		_toggle_debug()
 	_update_debug()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_F2:
-		_toggle_debug()
+func _unhandled_input(_event: InputEvent) -> void:
+	pass
 
 
 # ===========================================================================
@@ -712,28 +708,41 @@ func _setup_debug_label() -> void:
 	_debug_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_debug_label.add_theme_constant_override("outline_size", 2)
 	_debug_label.position = Vector2(-30, -FRAME_SIZE - 12)
-	_debug_label.visible = _debug_visible
+	_debug_label.visible = false
 	add_child(_debug_label)
 
 
-func _toggle_debug() -> void:
-	_debug_visible = not _debug_visible
-	if _debug_label:
-		_debug_label.visible = _debug_visible
-
-
 func _update_debug() -> void:
-	if _debug_label and _debug_visible:
-		var state_name: String = State.keys()[_state]
-		var extra := ""
-		if _is_jumping:
-			extra = " (air)"
-		if _buffered_input != &"":
-			extra += " buf:" + str(_buffered_input)
-		var meter_info: String = ""
-		if _special_meter:
-			meter_info = " M:%d" % _special_meter.get_segments()
-		_debug_label.text = "P%d %s%s%s" % [player_id, state_name, extra, meter_info]
+	if not _debug_label:
+		return
+	var debug_on: bool = InputManager.entity_debug_visible
+	_debug_label.visible = debug_on
+	if not debug_on:
+		return
+
+	var state_name: String = State.keys()[_state] as String
+	var hp_current: int = health.current_hp
+	var hp_max: int = health.max_hp
+	var meter_segs: int = 0
+	if _special_meter:
+		meter_segs = _special_meter.get_segments()
+	var hitbox_on: bool = hitbox.monitoring
+	var hurtbox_mode: String = ProcessMode.keys()[hurtbox.process_mode] as String
+	var entity_mode: String = ProcessMode.keys()[process_mode] as String
+
+	var extra: String = ""
+	if _is_jumping:
+		extra = " air"
+	if _buffered_input != &"":
+		extra += " buf:" + str(_buffered_input)
+
+	_debug_label.text = (
+		"P%d %s%s\nHP:%d/%d M:%d\nhit:%s hurt:%s\nproc:%s"
+		% [player_id, state_name, extra,
+		   hp_current, hp_max, meter_segs,
+		   "ON" if hitbox_on else "off",
+		   hurtbox_mode, entity_mode]
+	)
 
 
 # ===========================================================================
