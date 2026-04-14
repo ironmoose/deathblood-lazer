@@ -74,6 +74,7 @@ var _state_timer: float = 0.0
 var _cooldown_timer: float = 0.0
 var _target: Node2D = null
 var _retarget_timer: float = 0.0
+var _last_attacker: Node = null
 
 ## Debug overlay.
 var _debug_label: Label = null
@@ -147,6 +148,10 @@ func _enter_state(state: State) -> void:
 			_play_anim("hurt")
 		State.DEATH:
 			_play_anim("dead")
+			if _last_attacker and is_instance_valid(_last_attacker):
+				var pid: int = int(_last_attacker.get("player_id"))
+				if pid > 0:
+					GameManager.add_score(pid - 1, max_hp)
 
 
 func _exit_state(state: State) -> void:
@@ -316,6 +321,7 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	print("[Enemy] Damage received: %d HP:%d/%d state:%s attacker:%s" % [amount, health.current_hp, health.max_hp, State.keys()[_state], str(attacker)])
 	if _state == State.DEATH:
 		return
+	_last_attacker = attacker
 	health.take_damage(amount)
 	# Apply knockback direction.
 	if attacker and is_instance_valid(attacker):
@@ -408,8 +414,8 @@ func _update_debug() -> void:
 	if _target and is_instance_valid(_target):
 		target_name = _target.name
 	var hitbox_on: bool = hitbox.monitoring
-	var hurtbox_mode: String = ProcessMode.keys()[hurtbox.process_mode] as String
-	var entity_mode: String = ProcessMode.keys()[process_mode] as String
+	var hurtbox_mode: String = _process_mode_name(hurtbox.process_mode)
+	var entity_mode: String = _process_mode_name(process_mode)
 	var cooldown_str: String = "%.2f" % maxf(_cooldown_timer, 0.0)
 
 	_debug_label.text = (
@@ -418,6 +424,17 @@ func _update_debug() -> void:
 		   "ON" if hitbox_on else "off",
 		   hurtbox_mode, entity_mode, cooldown_str]
 	)
+
+
+## Convert ProcessMode enum to string for debug display.
+static func _process_mode_name(mode: int) -> String:
+	match mode:
+		0: return "INHERIT"
+		1: return "PAUSABLE"
+		2: return "WHEN_PAUSED"
+		3: return "ALWAYS"
+		4: return "DISABLED"
+	return "UNKNOWN"
 
 
 # ===========================================================================

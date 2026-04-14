@@ -138,11 +138,20 @@ var _state_timer: float = 0.0
 ## Which special tier was selected (1 = T1, 2 = T2, 3 = T3).
 var _special_tier: int = 1
 
+## Whether RB (special) is currently held for tier selection.
+var _special_held: bool = false
+
+## Latched tier during special charge (highest tier selected wins).
+var _latched_tier: int = 1
+
 ## Cached input prefix (set once in _ready).
 var _input_prefix: String = ""
 
 ## Debug overlay.
 var _debug_label: Label = null
+
+## Tier indicator label shown while charging special.
+var _tier_label: Label = null
 
 ## Cached default hitbox collision shape size and position for restoration after specials.
 var _default_hitbox_size: Vector2 = Vector2(18.0, 20.0)
@@ -165,6 +174,7 @@ func _ready() -> void:
 	animated_sprite.animation_finished.connect(_on_animation_finished)
 	_setup_shadow()
 	_setup_debug_label()
+	_setup_tier_label()
 	hitbox.owner_entity = self
 	hurtbox.owner_entity = self
 	hurtbox.damage_received.connect(_on_damage_received)
@@ -172,6 +182,7 @@ func _ready() -> void:
 	health.initialize()
 	# Create and wire special meter.
 	_special_meter = SpecialMeter.new()
+	_special_meter.name = "SpecialMeter"
 	add_child(_special_meter)
 	hitbox.damage_dealt.connect(_on_damage_dealt)
 	_change_state(State.IDLE)
@@ -236,6 +247,7 @@ func _physics_process(delta: float) -> void:
 	z_index = int(position.y)
 
 	# Debug overlay.
+	_update_tier_indicator()
 	_update_debug()
 
 
@@ -294,6 +306,9 @@ func _enter_state(state: State) -> void:
 			_dodge_timer = DODGE_DURATION
 			_play_anim("run")
 		State.SPECIAL:
+			_special_held = false
+			if _tier_label:
+				_tier_label.visible = false
 			if not _special_meter.use_tier(_special_tier):
 				_change_state(State.IDLE)
 				return
@@ -306,7 +321,23 @@ func _enter_state(state: State) -> void:
 			else:
 				hitbox.damage = SPECIAL_DAMAGE * _special_tier
 			hitbox.activate()
-			_play_anim("attack_3")  # TODO: tier-specific animations later
+			match _special_tier:
+				1:
+					_play_anim("attack_1")
+				2:
+					_play_anim("attack_2")
+				3:
+					_play_anim("attack_3")
+			# Flash player sprite the tier color.
+			var tier_color: Color
+			match _special_tier:
+				1: tier_color = Color.CYAN
+				2: tier_color = Color.MEDIUM_PURPLE
+				3: tier_color = Color.GOLD
+				_: tier_color = Color.WHITE
+			var sprite_tween: Tween = create_tween()
+			animated_sprite.modulate = tier_color
+			sprite_tween.tween_property(animated_sprite, "modulate", Color.WHITE, 0.3 + 0.1 * float(_special_tier))
 			# Scale hitbox collision shape by tier.
 			var hitbox_shape: CollisionShape2D = hitbox.get_node("CollisionShape2D") as CollisionShape2D
 			if hitbox_shape and hitbox_shape.shape is RectangleShape2D:
@@ -328,7 +359,7 @@ func _enter_state(state: State) -> void:
 					vfx.setup(30.0, Color.CYAN, 0.3)
 					vfx.position = Vector2(22.0 if not animated_sprite.flip_h else -22.0, -30.0)
 				2:
-					vfx.setup(60.0, Color.DEEP_SKY_BLUE, 0.4)
+					vfx.setup(60.0, Color.MEDIUM_PURPLE, 0.4)
 					vfx.position = Vector2(0.0, -30.0)
 				3:
 					vfx.setup(120.0, Color.GOLD, 0.5)
@@ -337,16 +368,26 @@ func _enter_state(state: State) -> void:
 			var flash_color: Color = Color.WHITE if _special_tier < 3 else Color.GOLD
 			ScreenFX.flash(0.1 + 0.05 * float(_special_tier), flash_color)
 			ScreenFX.shake(0.2 + 0.1 * float(_special_tier), 6.0 + 2.0 * float(_special_tier))
+			# Tier-scaled hitstop on all enemies in range.
+			var hitstop_duration: float = 0.03 * float(_special_tier)
+			var hit_targets: Array[Node] = [self]
+			for enemy: Node in get_tree().get_nodes_in_group("enemies"):
+				if is_instance_valid(enemy):
+					hit_targets.append(enemy)
+			HitStop.freeze(hitstop_duration, hit_targets)
 		State.HURT:
+			_special_held = false
 			_state_timer = HURT_DURATION
 			_play_anim("hurt")
 		State.KNOCKDOWN:
+			_special_held = false
 			_state_timer = KNOCKDOWN_DURATION
 			_play_anim("dead")
 		State.GETUP:
 			_state_timer = GETUP_DURATION
 			_play_anim("idle")
 		State.DEAD:
+			_special_held = false
 			_play_anim("dead")
 
 
@@ -415,12 +456,13 @@ func _update_state(delta: float) -> void:
 
 func _update_idle(_delta: float) -> void:
 	# Check combat inputs.
-	if Input.is_action_just_pressed(_input_prefix + "light"):
-		_change_state(State.ATTACK_1)
-		return
-	if Input.is_action_just_pressed(_input_prefix + "heavy"):
-		_change_state(State.ATTACK_2)
-		return
+	if not _special_held:
+		if Input.is_action_just_pressed(_input_prefix + "light"):
+			_change_state(State.ATTACK_1)
+			return
+		if Input.is_action_just_pressed(_input_prefix + "heavy"):
+			_change_state(State.ATTACK_2)
+			return
 	if Input.is_action_just_pressed(_input_prefix + "jump"):
 		_change_state(State.JUMP)
 		return
@@ -428,9 +470,15 @@ func _update_idle(_delta: float) -> void:
 		_change_state(State.DODGE)
 		return
 	if Input.is_action_just_pressed(_input_prefix + "special"):
-		var tier: int = _determine_special_tier()
-		if _special_meter.can_use_tier(tier):
-			_special_tier = tier
+		if _special_meter.can_use_tier(1):
+			_special_held = true
+			_latched_tier = 1
+		else:
+			ScreenFX.flash(0.1, Color.RED)
+	if _special_held and Input.is_action_just_released(_input_prefix + "special"):
+		_special_held = false
+		if _special_meter.can_use_tier(_latched_tier):
+			_special_tier = _latched_tier
 			_change_state(State.SPECIAL)
 			return
 		else:
@@ -447,12 +495,13 @@ func _update_move(_delta: float) -> void:
 	var input_dir := _get_input_direction()
 
 	# Check combat inputs.
-	if Input.is_action_just_pressed(_input_prefix + "light"):
-		_change_state(State.ATTACK_1)
-		return
-	if Input.is_action_just_pressed(_input_prefix + "heavy"):
-		_change_state(State.ATTACK_2)
-		return
+	if not _special_held:
+		if Input.is_action_just_pressed(_input_prefix + "light"):
+			_change_state(State.ATTACK_1)
+			return
+		if Input.is_action_just_pressed(_input_prefix + "heavy"):
+			_change_state(State.ATTACK_2)
+			return
 	if Input.is_action_just_pressed(_input_prefix + "jump"):
 		_change_state(State.JUMP)
 		return
@@ -460,9 +509,15 @@ func _update_move(_delta: float) -> void:
 		_change_state(State.DODGE)
 		return
 	if Input.is_action_just_pressed(_input_prefix + "special"):
-		var tier: int = _determine_special_tier()
-		if _special_meter.can_use_tier(tier):
-			_special_tier = tier
+		if _special_meter.can_use_tier(1):
+			_special_held = true
+			_latched_tier = 1
+		else:
+			ScreenFX.flash(0.1, Color.RED)
+	if _special_held and Input.is_action_just_released(_input_prefix + "special"):
+		_special_held = false
+		if _special_meter.can_use_tier(_latched_tier):
+			_special_tier = _latched_tier
 			_change_state(State.SPECIAL)
 			return
 		else:
@@ -705,8 +760,10 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 		_special_meter.add_points_from_damage_taken(amount)
 	# Apply knockback direction.
 	if attacker and is_instance_valid(attacker):
-		var dir: float = signf(global_position.x - (attacker as Node2D).global_position.x)
-		velocity = Vector2(dir * knockback, 0)
+		var attacker_2d := attacker as Node2D
+		if attacker_2d:
+			var dir: float = signf(global_position.x - attacker_2d.global_position.x)
+			velocity = Vector2(dir * knockback, 0)
 	var _hit_entities: Array[Node] = [self]
 	if attacker and is_instance_valid(attacker):
 		_hit_entities.append(attacker)
@@ -721,7 +778,7 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 
 ## Callback wired to [Hitbox.damage_dealt] — fills special meter when dealing damage.
 func _on_damage_dealt(amount: int, _target: Node) -> void:
-	if _special_meter:
+	if _special_meter and _state != State.SPECIAL:
 		_special_meter.add_points_from_damage_dealt(amount)
 
 
@@ -803,6 +860,43 @@ func _setup_debug_label() -> void:
 	add_child(_debug_label)
 
 
+func _setup_tier_label() -> void:
+	_tier_label = Label.new()
+	_tier_label.add_theme_font_size_override("font_size", 12)
+	_tier_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_tier_label.add_theme_constant_override("outline_size", 2)
+	_tier_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_tier_label.position = Vector2(-16, -FRAME_SIZE - 24)
+	_tier_label.visible = false
+	add_child(_tier_label)
+
+
+func _update_tier_indicator() -> void:
+	if not _tier_label:
+		return
+	if not _special_held:
+		_tier_label.visible = false
+		return
+
+	# Latch tier upward when X/Y pressed during hold
+	if Input.is_action_just_pressed(_input_prefix + "heavy") and _latched_tier < 3:
+		_latched_tier = 3
+	elif Input.is_action_just_pressed(_input_prefix + "light") and _latched_tier < 2:
+		_latched_tier = 2
+
+	_tier_label.visible = true
+	match _latched_tier:
+		1:
+			_tier_label.text = "T1"
+			_tier_label.add_theme_color_override("font_color", Color.CYAN)
+		2:
+			_tier_label.text = "T2"
+			_tier_label.add_theme_color_override("font_color", Color.MEDIUM_PURPLE)
+		3:
+			_tier_label.text = "T3"
+			_tier_label.add_theme_color_override("font_color", Color.GOLD)
+
+
 func _update_debug() -> void:
 	if not _debug_label:
 		return
@@ -818,8 +912,8 @@ func _update_debug() -> void:
 	if _special_meter:
 		meter_segs = _special_meter.get_segments()
 	var hitbox_on: bool = hitbox.monitoring
-	var hurtbox_mode: String = ProcessMode.keys()[hurtbox.process_mode] as String
-	var entity_mode: String = ProcessMode.keys()[process_mode] as String
+	var hurtbox_mode: String = _process_mode_name(hurtbox.process_mode)
+	var entity_mode: String = _process_mode_name(process_mode)
 
 	var extra: String = ""
 	if _is_jumping:
@@ -834,6 +928,17 @@ func _update_debug() -> void:
 		   "ON" if hitbox_on else "off",
 		   hurtbox_mode, entity_mode]
 	)
+
+
+## Convert ProcessMode enum to string for debug display.
+static func _process_mode_name(mode: int) -> String:
+	match mode:
+		0: return "INHERIT"
+		1: return "PAUSABLE"
+		2: return "WHEN_PAUSED"
+		3: return "ALWAYS"
+		4: return "DISABLED"
+	return "UNKNOWN"
 
 
 # ===========================================================================

@@ -21,6 +21,7 @@ func initialize(hp: int = -1) -> void:
 	if hp > 0:
 		max_hp = hp
 	current_hp = max_hp
+	health_changed.emit(current_hp, max_hp)
 
 
 func take_damage(amount: int) -> void:
