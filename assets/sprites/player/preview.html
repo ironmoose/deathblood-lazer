@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deathblood Lazer — Wiley Preview</title>
+  <title>Deathblood Lazer — Character Preview</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -48,52 +48,6 @@
       margin-bottom: 12px;
     }
 
-    /* --- Speed Controls --- */
-    .global-controls {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      background: #0f0f23;
-      border: 2px solid #2a2a4a;
-      border-radius: 8px;
-      padding: 8px 20px;
-    }
-
-    .global-controls button {
-      background: #2a2a4a;
-      color: #e0e0e0;
-      border: 1px solid #4a4a6a;
-      border-radius: 4px;
-      padding: 5px 14px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.2s, border-color 0.2s;
-    }
-
-    .global-controls button:hover {
-      background: #3a3a5a;
-      border-color: #00d4ff;
-    }
-
-    .global-controls button:active {
-      background: #4a4a6a;
-    }
-
-    .speed-display {
-      font-size: 0.95rem;
-      color: #7b68ee;
-      min-width: 80px;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .controls-label {
-      color: #00d4ff;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
     /* --- Content --- */
     .content {
       padding: 32px 20px;
@@ -115,15 +69,6 @@
 
     .section-header:first-child {
       margin-top: 0;
-    }
-
-    /* --- Row Labels --- */
-    .row-label {
-      font-size: 0.8rem;
-      color: #7b68ee;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin: 20px 0 8px 0;
     }
 
     /* --- Cards --- */
@@ -158,12 +103,6 @@
       text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
     }
 
-    .frame-counter {
-      font-size: 0.8rem;
-      color: #888;
-      margin-top: 8px;
-      font-family: monospace;
-    }
     .tab-bar { display: flex; gap: 0; }
     .tab-btn { background: transparent; color: #888; border: none; border-bottom: 3px solid transparent; padding: 10px 28px; font-size: 1rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
     .tab-btn:hover { color: #ccc; }
@@ -178,14 +117,7 @@
   <!-- ==================== STICKY TOP BAR ==================== -->
   <div class="top-bar">
     <h1>Deathblood Lazer</h1>
-    <p class="subtitle">Wiley — Character Preview</p>
-
-    <div class="global-controls">
-      <span class="controls-label">Speed</span>
-      <button id="btn-slower">Slower</button>
-      <span class="speed-display" id="speed-label">8.0 fps</span>
-      <button id="btn-faster">Faster</button>
-    </div>
+    <p class="subtitle">Character Preview</p>
 
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="wiley">Wiley</button>
@@ -252,74 +184,23 @@
       </div>
     </div>
 
-    <!-- Animations -->
-    <div class="section-header">Animations</div>
-
-    <!-- Row 1: Movement -->
-    <div class="row-label">Movement</div>
-    <div class="card-row">
-      <div class="anim-card" data-anim="walk">
-        <div class="anim-label">Walk</div>
-        <img src="../characters/wiley/frames/v3_walk_frame0.png" alt="Walk" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 9</div>
-      </div>
-      <div class="anim-card" data-anim="idle">
-        <div class="anim-label">Idle</div>
-        <img src="../characters/wiley/frames/v3_idle_frame0.png" alt="Idle" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 9</div>
-      </div>
-      <div class="anim-card" data-anim="fight_stance">
-        <div class="anim-label">Fight Stance</div>
-        <img src="../characters/wiley/frames/v3_fight_stance_frame0.png" alt="Fight Stance" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 9</div>
-      </div>
-      <div class="anim-card" data-anim="jump">
-        <div class="anim-label">Jump</div>
-        <img src="../characters/wiley/frames/v3_jump_frame0.png" alt="Jump" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 7</div>
-      </div>
-    </div>
-
-    <!-- Row 2: Combat -->
-    <div class="row-label">Combat</div>
-    <div class="card-row">
-      <div class="anim-card" data-anim="attack1">
-        <div class="anim-label">Attack 1</div>
-        <img src="../characters/wiley/frames/v3_attack1_frame0.png" alt="Attack 1" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 7</div>
-      </div>
-      <div class="anim-card" data-anim="attack2">
-        <div class="anim-label">Attack 2</div>
-        <img src="../characters/wiley/frames/v3_attack2_frame0.png" alt="Attack 2" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 7</div>
-      </div>
-      <div class="anim-card" data-anim="attack3">
-        <div class="anim-label">Attack 3</div>
-        <img src="../characters/wiley/frames/v3_attack3_frame0.png" alt="Attack 3" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 9</div>
-      </div>
-    </div>
-
-    <!-- Row 3: Damage -->
-    <div class="row-label">Damage</div>
-    <div class="card-row">
-      <div class="anim-card" data-anim="hurt">
-        <div class="anim-label">Hurt</div>
-        <img src="../characters/wiley/frames/v3_hurt_frame0.png" alt="Hurt" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 7</div>
-      </div>
-      <div class="anim-card" data-anim="death">
-        <div class="anim-label">Death</div>
-        <img src="../characters/wiley/frames/v3_death_frame0.png" alt="Death" class="anim-frame" data-scale="2">
-        <div class="frame-counter">Frame 1 / 9</div>
-      </div>
-    </div>
-
   </div>
 
   <div class="tab-content" id="tab-father-stu">
 
-    <div class="section-header">Father Stu — Official Character (Medieval Cyberpunk Dwarf)</div>
+    <div class="section-header">Official Character</div>
+    <div class="card-row">
+      <div class="anim-card">
+        <div class="anim-label">South-West</div>
+        <img src="../characters/father_stu/frames/cc_father_stu_southwest.png" alt="Father Stu South-West" class="ref-img" data-scale="1">
+      </div>
+      <div class="anim-card">
+        <div class="anim-label">South-East</div>
+        <img src="../characters/father_stu/frames/cc_father_stu_southeast.png" alt="Father Stu South-East" class="ref-img" data-scale="1">
+      </div>
+    </div>
+
+    <div class="section-header">All Rotations</div>
 
     <!-- Row 1: South, South-West, West, North-West -->
     <div class="card-row">
@@ -381,78 +262,6 @@
 
     document.querySelectorAll('.ref-img').forEach(applyScale);
 
-    // ---- Animation Engine ----
-    var animations = {
-      'walk':         { frames: 9, prefix: '../characters/wiley/frames/v3_walk_frame' },
-      'idle':         { frames: 9, prefix: '../characters/wiley/frames/v3_idle_frame' },
-      'fight_stance': { frames: 9, prefix: '../characters/wiley/frames/v3_fight_stance_frame' },
-      'jump':         { frames: 7, prefix: '../characters/wiley/frames/v3_jump_frame' },
-      'attack1':      { frames: 7, prefix: '../characters/wiley/frames/v3_attack1_frame' },
-      'attack2':      { frames: 7, prefix: '../characters/wiley/frames/v3_attack2_frame' },
-      'attack3':      { frames: 9, prefix: '../characters/wiley/frames/v3_attack3_frame' },
-      'hurt':         { frames: 7, prefix: '../characters/wiley/frames/v3_hurt_frame' },
-      'death':        { frames: 9, prefix: '../characters/wiley/frames/v3_death_frame' },
-    };
-
-    var fps = 8;
-    var intervalId = null;
-    var frameIndices = {};
-
-    Object.keys(animations).forEach(function(anim) {
-      frameIndices[anim] = 0;
-    });
-
-    // Apply scale to animation frames after they first load
-    document.querySelectorAll('.anim-frame').forEach(function(img) {
-      var scale = parseInt(img.getAttribute('data-scale'), 10) || 3;
-      function set() {
-        if (img.naturalWidth > 0 && !img._scaled) {
-          img.style.width = (img.naturalWidth * scale) + 'px';
-          img.style.height = (img.naturalHeight * scale) + 'px';
-          img._scaled = true;
-        }
-      }
-      if (img.complete) set();
-      img.addEventListener('load', set);
-    });
-
-    var speedLabel = document.getElementById('speed-label');
-
-    function tick() {
-      Object.keys(animations).forEach(function(anim) {
-        var card = document.querySelector('[data-anim="' + anim + '"]');
-        if (!card) return;
-        var img = card.querySelector('.anim-frame');
-        var counter = card.querySelector('.frame-counter');
-        var config = animations[anim];
-        frameIndices[anim] = (frameIndices[anim] + 1) % config.frames;
-        var idx = frameIndices[anim];
-        img.src = config.prefix + idx + '.png';
-        counter.textContent = 'Frame ' + (idx + 1) + ' / ' + config.frames;
-      });
-    }
-
-    function startAnimation() {
-      if (intervalId) clearInterval(intervalId);
-      intervalId = setInterval(tick, 1000 / fps);
-    }
-
-    function updateSpeedLabel() {
-      speedLabel.textContent = fps.toFixed(1) + ' fps';
-    }
-
-    document.getElementById('btn-slower').addEventListener('click', function() {
-      fps = Math.max(1, fps - 1);
-      updateSpeedLabel();
-      startAnimation();
-    });
-
-    document.getElementById('btn-faster').addEventListener('click', function() {
-      fps = Math.min(30, fps + 1);
-      updateSpeedLabel();
-      startAnimation();
-    });
-
     // ---- Tab Navigation ----
     var tabBtns = document.querySelectorAll('.tab-btn');
     var tabPanels = document.querySelectorAll('.tab-content');
@@ -464,8 +273,6 @@
         document.getElementById('tab-' + btn.getAttribute('data-tab')).classList.add('active');
       });
     });
-
-    startAnimation();
   </script>
 </body>
 </html>
