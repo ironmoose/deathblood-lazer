@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEATHBLOOD LAZER — Project Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ========== Header ========== */
+    header {
+      text-align: center;
+      padding: 60px 20px 40px;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      color: #ff2975;
+      text-shadow: 0 0 20px rgba(255, 41, 117, 0.5), 0 0 60px rgba(255, 41, 117, 0.25);
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    header .subtitle {
+      color: #7b68ee;
+      font-size: 1.1rem;
+      letter-spacing: 3px;
+      margin-top: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* ========== Card Grid ========== */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      padding: 0 40px 60px;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .card-grid {
+        grid-template-columns: 1fr;
+        padding: 0 20px 40px;
+      }
+
+      header h1 {
+        font-size: 2rem;
+        letter-spacing: 3px;
+      }
+    }
+
+    /* ========== Card Base ========== */
+    .card {
+      background: #0f0f23;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 28px 24px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card h2 {
+      color: #00d4ff;
+      font-size: 1.15rem;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .card p {
+      color: #888;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    /* ========== Active Cards (linked) ========== */
+    a.card-link {
+      text-decoration: none;
+      display: block;
+      border-radius: 8px;
+    }
+
+    a.card-link:focus-visible .card {
+      border-color: #00d4ff;
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+      outline: none;
+    }
+
+    a.card-link .card:hover {
+      border-color: #00d4ff;
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+    }
+
+    /* ========== Disabled Cards ========== */
+    .card.disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .card .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 3px;
+      margin-top: 12px;
+    }
+
+    .badge.coming-soon {
+      color: #7b68ee;
+      border: 1px solid #7b68ee;
+    }
+
+    .badge.local-only {
+      color: #ff2975;
+      border: 1px solid #ff2975;
+    }
+
+    /* ========== Footer ========== */
+    footer {
+      margin-top: auto;
+      padding: 30px 20px;
+      text-align: center;
+      color: #555;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>DEATHBLOOD LAZER</h1>
+    <div class="subtitle">Project Dashboard</div>
+  </header>
+
+  <div class="card-grid">
+
+    <a class="card-link" href="/assets/sprites/player/preview.html">
+      <div class="card">
+        <h2>Asset Hub</h2>
+        <p>Character previews, sprite rotations, animation playback</p>
+      </div>
+    </a>
+
+    <a class="card-link" href="/tools/skeleton_editor.html">
+      <div class="card">
+        <h2>Skeleton Editor</h2>
+        <p>Visual keypoint editor for skeleton-based animations</p>
+      </div>
+    </a>
+
+    <div class="card disabled">
+      <h2>Play Game</h2>
+      <p>Launch in Godot — open project.godot</p>
+      <span class="badge local-only">Open project.godot in Godot Editor</span>
+    </div>
+
+    <a class="card-link" href="/docs/ai-art-research.md">
+      <div class="card">
+        <h2>Documentation</h2>
+        <p>AI art research, combat design notes</p>
+      </div>
+    </a>
+
+    <div class="card disabled">
+      <h2>Combat Design</h2>
+      <p>Weapon categories, combo system, special moves</p>
+      <span class="badge coming-soon">Coming Soon</span>
+    </div>
+
+    <div class="card disabled">
+      <h2>Stage Builder</h2>
+      <p>Level layout, encounter design, triggers</p>
+      <span class="badge coming-soon">Coming Soon</span>
+    </div>
+
+  </div>
+
+  <footer>Father + Son Project — Godot 4.6 / GDScript</footer>
+
+</body>
+</html>

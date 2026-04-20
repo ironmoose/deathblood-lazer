@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deathblood Lazer — Character Preview</title>
+  <title>DEATHBLOOD LAZER — Asset Hub</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -19,49 +19,138 @@
       image-rendering: crisp-edges;
     }
 
-    /* --- Sticky Header --- */
+    /* ========== Sticky Top Bar ========== */
     .top-bar {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: #12122a;
+      background: #12122aee;
+      backdrop-filter: blur(8px);
       border-bottom: 2px solid #2a2a4a;
-      padding: 16px 20px 12px 20px;
+      padding: 16px 20px 0 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    h1 {
+    .top-bar h1 {
       font-size: 2rem;
       color: #ff2975;
       text-shadow: 0 0 20px rgba(255, 41, 117, 0.5);
       letter-spacing: 2px;
       text-transform: uppercase;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
+      line-height: 1;
     }
 
-    .subtitle {
+    .top-bar .subtitle {
       color: #7b68ee;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       letter-spacing: 1px;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+      font-weight: 600;
     }
 
-    /* --- Content --- */
-    .content {
+    /* ========== Tool Navigation ========== */
+    .tool-nav {
+      display: flex;
+      gap: 10px;
+      padding-bottom: 14px;
+    }
+
+    .tool-btn {
+      background: transparent;
+      color: #888;
+      border: 2px solid #2a2a4a;
+      border-radius: 24px;
+      padding: 8px 22px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .tool-btn:hover {
+      color: #ccc;
+      border-color: #4a4a7a;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tool-btn.active {
+      color: #00d4ff;
+      border-color: #00d4ff;
+      background: #0f0f23;
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.15), inset 0 0 8px rgba(0, 212, 255, 0.05);
+      text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+    }
+
+    /* ========== Tool Content Panels ========== */
+    .tool-content {
+      display: none;
+    }
+
+    .tool-content.active {
+      display: block;
+    }
+
+    /* ========== Main Content Area ========== */
+    .content-area {
       padding: 32px 20px;
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
-    /* --- Section Headers --- */
+    /* ========== Character Sub-Tabs ========== */
+    .char-tab-bar {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    .char-tab-btn {
+      background: transparent;
+      color: #666;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 8px 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      outline: none;
+    }
+
+    .char-tab-btn:hover {
+      color: #bbb;
+    }
+
+    .char-tab-btn.active {
+      color: #00d4ff;
+      border-bottom-color: #00d4ff;
+      text-shadow: 0 0 6px rgba(0, 212, 255, 0.3);
+    }
+
+    .char-content {
+      display: none;
+    }
+
+    .char-content.active {
+      display: block;
+    }
+
+    /* ========== Section Headers ========== */
     .section-header {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       color: #ff2975;
       text-transform: uppercase;
       letter-spacing: 3px;
-      margin: 32px 0 16px 0;
+      margin: 28px 0 14px 0;
       padding-bottom: 8px;
       border-bottom: 1px solid #2a2a4a;
       text-shadow: 0 0 12px rgba(255, 41, 117, 0.3);
@@ -71,19 +160,19 @@
       margin-top: 0;
     }
 
-    /* --- Cards --- */
+    /* ========== Cards ========== */
     .card-row {
       display: flex;
-      gap: 24px;
+      gap: 20px;
       flex-wrap: wrap;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .anim-card {
       background: #0f0f23;
       border: 2px solid #2a2a4a;
       border-radius: 8px;
-      padding: 20px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -95,21 +184,39 @@
     }
 
     .anim-label {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       color: #00d4ff;
       text-transform: uppercase;
       letter-spacing: 2px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
     }
 
-    .tab-bar { display: flex; gap: 0; }
-    .tab-btn { background: transparent; color: #888; border: none; border-bottom: 3px solid transparent; padding: 10px 28px; font-size: 1rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
-    .tab-btn:hover { color: #ccc; }
-    .tab-btn.active { color: #00d4ff; border-bottom-color: #00d4ff; text-shadow: 0 0 8px rgba(0, 212, 255, 0.4); }
-    .tab-content { display: none; padding: 32px 20px; max-width: 1100px; margin: 0 auto; }
-    .tab-content.active { display: block; }
-    .muted-note { color: #666; font-size: 0.85rem; font-style: italic; margin-top: 16px; }
+    /* ========== Muted Note ========== */
+    .muted-note {
+      color: #555;
+      font-size: 0.85rem;
+      font-style: italic;
+      margin-top: 16px;
+    }
+
+    /* ========== Placeholder Panel ========== */
+    .placeholder-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      background: #0f0f23;
+      border: 2px dashed #2a2a4a;
+      border-radius: 12px;
+      padding: 40px;
+    }
+
+    .placeholder-panel .muted-note {
+      font-size: 1rem;
+      color: #555;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -117,132 +224,176 @@
   <!-- ==================== STICKY TOP BAR ==================== -->
   <div class="top-bar">
     <h1>Deathblood Lazer</h1>
-    <p class="subtitle">Character Preview</p>
+    <p class="subtitle">Asset Hub</p>
 
-    <div class="tab-bar">
-      <button class="tab-btn active" data-tab="wiley">Wiley</button>
-      <button class="tab-btn" data-tab="father-stu">Father Stu</button>
+    <div class="tool-nav">
+      <button class="tool-btn active" data-tool="characters">Characters</button>
+      <button class="tool-btn" data-tool="skeleton-editor">Skeleton Editor</button>
+      <button class="tool-btn" data-tool="animations">Animations</button>
     </div>
   </div>
 
-  <!-- ==================== CONTENT ==================== -->
-  <div class="tab-content active" id="tab-wiley">
+  <!-- ==================== TOOL CONTENT PANELS ==================== -->
+  <div class="content-area">
 
-    <!-- Official Character -->
-    <div class="section-header">Official Character</div>
-    <div class="card-row">
-      <div class="anim-card">
-        <div class="anim-label">South-West</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_south-west.png" alt="Wiley v8 South-West" class="ref-img" data-scale="1">
+    <!-- ========== Characters Tool ========== -->
+    <div class="tool-content active" id="tool-characters">
+
+      <div class="char-tab-bar">
+        <button class="char-tab-btn active" data-char="wiley">Wiley</button>
+        <button class="char-tab-btn" data-char="father-stu">Father Stu</button>
       </div>
-      <div class="anim-card">
-        <div class="anim-label">South-East</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_south-east.png" alt="Wiley v8 South-East" class="ref-img" data-scale="1">
+
+      <!-- Wiley -->
+      <div class="char-content active" id="char-wiley">
+
+        <div class="section-header">Official Character</div>
+        <div class="card-row">
+          <div class="anim-card">
+            <div class="anim-label">South-West</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_south-west.png" alt="Wiley v8 South-West" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">South-East</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_south-east.png" alt="Wiley v8 South-East" class="ref-img" data-scale="1">
+          </div>
+        </div>
+
+        <div class="section-header">All Rotations</div>
+
+        <!-- Row 1: South, South-West, West, North-West -->
+        <div class="card-row">
+          <div class="anim-card">
+            <div class="anim-label">South</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_south.png" alt="Wiley v8 South" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">South-West</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_south-west.png" alt="Wiley v8 South-West" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">West</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_west.png" alt="Wiley v8 West" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">North-West</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_north-west.png" alt="Wiley v8 North-West" class="ref-img" data-scale="1">
+          </div>
+        </div>
+
+        <!-- Row 2: North, North-East, East, South-East -->
+        <div class="card-row">
+          <div class="anim-card">
+            <div class="anim-label">North</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_north.png" alt="Wiley v8 North" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">North-East</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_north-east.png" alt="Wiley v8 North-East" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">East</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_east.png" alt="Wiley v8 East" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">South-East</div>
+            <img src="../characters/wiley/frames/cc_wiley_v8_south-east.png" alt="Wiley v8 South-East" class="ref-img" data-scale="1">
+          </div>
+        </div>
+
+        <!-- Animations -->
+        <div class="section-header">Animations</div>
+
+        <div class="card-row">
+          <div class="anim-card" id="anim-walk">
+            <div class="anim-label">Walk</div>
+            <img src="../characters/wiley/frames/walk_frame0.png" alt="Walk" class="ref-img" data-scale="1" id="anim-img-walk">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-walk" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-walk" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card" id="anim-breathing-idle">
+            <div class="anim-label">Breathing Idle</div>
+            <img src="../characters/wiley/frames/breathing_idle_frame0.png" alt="Breathing Idle" class="ref-img" data-scale="1" id="anim-img-breathing-idle">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-breathing-idle" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-breathing-idle" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 4</span>
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      <!-- Father Stu -->
+      <div class="char-content" id="char-father-stu">
+
+        <div class="section-header">Official Character</div>
+        <div class="card-row">
+          <div class="anim-card">
+            <div class="anim-label">South-West</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_southwest.png" alt="Father Stu South-West" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">South-East</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_southeast.png" alt="Father Stu South-East" class="ref-img" data-scale="1">
+          </div>
+        </div>
+
+        <div class="section-header">All Rotations</div>
+
+        <!-- Row 1: South, South-West, West, North-West -->
+        <div class="card-row">
+          <div class="anim-card">
+            <div class="anim-label">South</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_south.png" alt="Father Stu South" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">South-West</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_southwest.png" alt="Father Stu South-West" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">West</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_west.png" alt="Father Stu West" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">North-West</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_northwest.png" alt="Father Stu North-West" class="ref-img" data-scale="1">
+          </div>
+        </div>
+
+        <!-- Row 2: North, North-East, East, South-East -->
+        <div class="card-row">
+          <div class="anim-card">
+            <div class="anim-label">North</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_north.png" alt="Father Stu North" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">North-East</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_northeast.png" alt="Father Stu North-East" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">East</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_east.png" alt="Father Stu East" class="ref-img" data-scale="1">
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">South-East</div>
+            <img src="../characters/father_stu/frames/cc_father_stu_southeast.png" alt="Father Stu South-East" class="ref-img" data-scale="1">
+          </div>
+        </div>
+
+        <p class="muted-note">Animations will be generated after character is approved</p>
+
+      </div>
+
     </div>
 
-    <!-- Wiley v8 — All 8 Rotations -->
-    <div class="section-header">All Rotations</div>
-
-    <!-- Row 1: South, South-West, West, North-West -->
-    <div class="card-row">
-      <div class="anim-card">
-        <div class="anim-label">South</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_south.png" alt="Wiley v8 South" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">South-West</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_south-west.png" alt="Wiley v8 South-West" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">West</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_west.png" alt="Wiley v8 West" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">North-West</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_north-west.png" alt="Wiley v8 North-West" class="ref-img" data-scale="1">
+    <!-- ========== Animations Tool ========== -->
+    <div class="tool-content" id="tool-animations">
+      <div class="placeholder-panel">
+        <p class="muted-note">Coming soon — animations will appear here once generated</p>
       </div>
     </div>
-
-    <!-- Row 2: North, North-East, East, South-East -->
-    <div class="card-row">
-      <div class="anim-card">
-        <div class="anim-label">North</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_north.png" alt="Wiley v8 North" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">North-East</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_north-east.png" alt="Wiley v8 North-East" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">East</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_east.png" alt="Wiley v8 East" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">South-East</div>
-        <img src="../characters/wiley/frames/cc_wiley_v8_south-east.png" alt="Wiley v8 South-East" class="ref-img" data-scale="1">
-      </div>
-    </div>
-
-  </div>
-
-  <div class="tab-content" id="tab-father-stu">
-
-    <div class="section-header">Official Character</div>
-    <div class="card-row">
-      <div class="anim-card">
-        <div class="anim-label">South-West</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_southwest.png" alt="Father Stu South-West" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">South-East</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_southeast.png" alt="Father Stu South-East" class="ref-img" data-scale="1">
-      </div>
-    </div>
-
-    <div class="section-header">All Rotations</div>
-
-    <!-- Row 1: South, South-West, West, North-West -->
-    <div class="card-row">
-      <div class="anim-card">
-        <div class="anim-label">South</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_south.png" alt="Father Stu South" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">South-West</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_southwest.png" alt="Father Stu South-West" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">West</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_west.png" alt="Father Stu West" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">North-West</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_northwest.png" alt="Father Stu North-West" class="ref-img" data-scale="1">
-      </div>
-    </div>
-
-    <!-- Row 2: North, North-East, East, South-East -->
-    <div class="card-row">
-      <div class="anim-card">
-        <div class="anim-label">North</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_north.png" alt="Father Stu North" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">North-East</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_northeast.png" alt="Father Stu North-East" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">East</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_east.png" alt="Father Stu East" class="ref-img" data-scale="1">
-      </div>
-      <div class="anim-card">
-        <div class="anim-label">South-East</div>
-        <img src="../characters/father_stu/frames/cc_father_stu_southeast.png" alt="Father Stu South-East" class="ref-img" data-scale="1">
-      </div>
-    </div>
-
-    <p class="muted-note">Animations will be generated after character is approved</p>
 
   </div>
 
@@ -262,17 +413,110 @@
 
     document.querySelectorAll('.ref-img').forEach(applyScale);
 
-    // ---- Tab Navigation ----
-    var tabBtns = document.querySelectorAll('.tab-btn');
-    var tabPanels = document.querySelectorAll('.tab-content');
-    tabBtns.forEach(function(btn) {
+    // ---- Tool Navigation ----
+    var toolBtns = document.querySelectorAll('.tool-btn');
+    var toolPanels = document.querySelectorAll('.tool-content');
+
+    toolBtns.forEach(function(btn) {
       btn.addEventListener('click', function() {
-        tabBtns.forEach(function(b) { b.classList.remove('active'); });
-        tabPanels.forEach(function(p) { p.classList.remove('active'); });
+        var tool = btn.getAttribute('data-tool');
+
+        // Skeleton Editor navigates away
+        if (tool === 'skeleton-editor') {
+          window.location.href = '../../../tools/skeleton_editor.html';
+          return;
+        }
+
+        // Switch active tool button
+        toolBtns.forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
-        document.getElementById('tab-' + btn.getAttribute('data-tab')).classList.add('active');
+
+        // Switch active tool panel
+        toolPanels.forEach(function(p) { p.classList.remove('active'); });
+        var panel = document.getElementById('tool-' + tool);
+        if (panel) panel.classList.add('active');
       });
     });
+
+    // ---- Character Sub-Tab Navigation ----
+    var charBtns = document.querySelectorAll('.char-tab-btn');
+    var charPanels = document.querySelectorAll('.char-content');
+
+    charBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        charBtns.forEach(function(b) { b.classList.remove('active'); });
+        charPanels.forEach(function(p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+        var panel = document.getElementById('char-' + btn.getAttribute('data-char'));
+        if (panel) panel.classList.add('active');
+
+        // Stop all Wiley animations when switching away
+        if (btn.getAttribute('data-char') !== 'wiley') {
+          stopAllAnimations();
+        }
+      });
+    });
+
+    // ---- Reusable Animation System ----
+    var animConfigs = [
+      {id: 'walk', frames: 9, prefix: '../characters/wiley/frames/walk_frame', fps: 8},
+      {id: 'breathing-idle', frames: 4, prefix: '../characters/wiley/frames/breathing_idle_frame', fps: 6},
+    ];
+
+    var animStates = {};
+
+    animConfigs.forEach(function(cfg) {
+      var imgEl = document.getElementById('anim-img-' + cfg.id);
+      var btnEl = document.getElementById('btn-' + cfg.id);
+      var counterEl = document.getElementById('counter-' + cfg.id);
+
+      var state = {
+        index: 0,
+        playing: false,
+        interval: null,
+        img: imgEl,
+        btn: btnEl,
+        counter: counterEl,
+        cfg: cfg
+      };
+      animStates[cfg.id] = state;
+
+      btnEl.addEventListener('click', function() {
+        if (state.playing) {
+          stopAnim(state);
+        } else {
+          startAnim(state);
+        }
+      });
+    });
+
+    function startAnim(state) {
+      if (state.interval) clearInterval(state.interval);
+      state.interval = setInterval(function() {
+        state.index = (state.index + 1) % state.cfg.frames;
+        state.img.src = state.cfg.prefix + state.index + '.png';
+        state.counter.textContent = 'Frame ' + (state.index + 1) + ' / ' + state.cfg.frames;
+      }, 1000 / state.cfg.fps);
+      state.playing = true;
+      state.btn.textContent = 'Stop';
+      state.btn.style.background = '#ff2975';
+      state.btn.style.color = '#fff';
+    }
+
+    function stopAnim(state) {
+      if (state.interval) clearInterval(state.interval);
+      state.interval = null;
+      state.playing = false;
+      state.btn.textContent = 'Play';
+      state.btn.style.background = '#00ff88';
+      state.btn.style.color = '#0f0f23';
+    }
+
+    function stopAllAnimations() {
+      Object.keys(animStates).forEach(function(key) {
+        stopAnim(animStates[key]);
+      });
+    }
   </script>
 </body>
 </html>

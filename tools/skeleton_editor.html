@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deathblood Lazer — Skeleton Editor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* --- Sticky Header --- */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #12122a;
+      border-bottom: 2px solid #2a2a4a;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    .top-bar h1 {
+      font-size: 1.3rem;
+      color: #ff2975;
+      text-shadow: 0 0 20px rgba(255, 41, 117, 0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .top-bar .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .top-bar label {
+      color: #7b68ee;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    select, input[type="text"] {
+      background: #0f0f23;
+      color: #e0e0e0;
+      border: 1px solid #2a2a4a;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    select:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: #7b68ee;
+    }
+
+    button {
+      background: #2a2a4a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a5a;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button:hover {
+      background: #3a3a5a;
+      border-color: #7b68ee;
+    }
+    button.primary {
+      background: #ff2975;
+      border-color: #ff2975;
+      color: #fff;
+      font-weight: 600;
+    }
+    button.primary:hover {
+      background: #e0205f;
+    }
+    button.danger {
+      background: #4a1a2e;
+      border-color: #ff2975;
+      color: #ff6090;
+    }
+    button.danger:hover {
+      background: #6a2a3e;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* --- Main Layout --- */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* --- Canvas Area --- */
+    .canvas-area {
+      flex: 7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f23;
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      cursor: crosshair;
+    }
+
+    .canvas-info {
+      position: absolute;
+      bottom: 8px;
+      left: 12px;
+      font-size: 0.75rem;
+      color: #666;
+      pointer-events: none;
+    }
+
+    /* --- Side Panel --- */
+    .side-panel {
+      flex: 3;
+      min-width: 280px;
+      max-width: 360px;
+      background: #12122a;
+      border-left: 2px solid #2a2a4a;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .panel-section {
+      padding: 12px 14px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    .panel-section h3 {
+      font-size: 0.8rem;
+      color: #ff2975;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    /* --- Keypoint Info --- */
+    .kp-info {
+      font-size: 0.85rem;
+    }
+    .kp-info .kp-label {
+      color: #00d4ff;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .kp-info .kp-coords {
+      color: #aaa;
+      margin-top: 4px;
+    }
+    .kp-info .kp-coords span {
+      color: #e0e0e0;
+      font-family: 'Consolas', monospace;
+    }
+    .kp-info .kp-none {
+      color: #555;
+      font-style: italic;
+    }
+
+    /* --- Keypoint List --- */
+    .kp-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .kp-chip {
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: border-color 0.1s;
+    }
+    .kp-chip:hover {
+      border-color: #fff;
+    }
+    .kp-chip.selected {
+      border-color: #fff;
+      box-shadow: 0 0 6px rgba(255,255,255,0.3);
+    }
+    .kp-chip.head { background: rgba(255,255,0,0.2); color: #ffff60; }
+    .kp-chip.left { background: rgba(0,212,255,0.2); color: #00d4ff; }
+    .kp-chip.right { background: rgba(255,0,200,0.2); color: #ff60d0; }
+    .kp-chip.spine { background: rgba(255,255,255,0.15); color: #ccc; }
+
+    /* --- Animation / Frame Lists --- */
+    .anim-list, .frame-list {
+      list-style: none;
+      margin-top: 6px;
+    }
+    .anim-list li, .frame-list li {
+      padding: 5px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.1s;
+    }
+    .anim-list li:hover, .frame-list li:hover {
+      background: #2a2a4a;
+    }
+    .anim-list li.active, .frame-list li.active {
+      background: #2a2a4a;
+      border-left: 3px solid #ff2975;
+      padding-left: 5px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .action-buttons {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: auto;
+      border-top: 1px solid #2a2a4a;
+    }
+
+    /* --- No-sprite overlay --- */
+    .no-sprite {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      gap: 16px;
+      text-align: center;
+      padding: 40px;
+    }
+    .no-sprite p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* --- Toast --- */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #2a2a4a;
+      color: #e0e0e0;
+      padding: 10px 24px;
+      border-radius: 6px;
+      border: 1px solid #3a3a5a;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      z-index: 200;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.success { border-color: #00d4ff; }
+    .toast.error { border-color: #ff2975; }
+
+    /* --- Direction Selector --- */
+    .dir-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .dir-selector label {
+      color: #7b68ee;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    .dir-btn {
+      background: #0f0f23;
+      color: #888;
+      border: 1px solid #2a2a4a;
+      padding: 3px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .dir-btn:hover:not(.missing) {
+      color: #ccc;
+      border-color: #555;
+    }
+
+    .dir-btn.active {
+      color: #00d4ff;
+      border-color: #00d4ff;
+    }
+
+    .dir-btn.missing {
+      color: #444;
+      cursor: not-allowed;
+      border-color: #1a1a2e;
+    }
+
+    /* --- Playback Controls --- */
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .playback-controls .btn-play {
+      background: #1a3a2a;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      padding: 4px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .playback-controls .btn-play:hover:not(:disabled) {
+      background: #2a4a3a;
+    }
+
+    .playback-controls .btn-play.playing {
+      background: #3a1a2a;
+      border-color: #ff2975;
+      color: #ff2975;
+    }
+
+    .playback-controls .btn-play.playing:hover {
+      background: #4a2a3a;
+    }
+
+    .playback-controls .btn-play:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .playback-controls .fps-control {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .playback-controls .btn-fps {
+      background: #2a2a4a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a5a;
+      padding: 2px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .playback-controls .btn-fps:hover {
+      background: #3a3a5a;
+      border-color: #7b68ee;
+    }
+
+    .playback-controls .fps-display {
+      font-family: 'Consolas', monospace;
+      font-size: 0.8rem;
+      color: #7b68ee;
+      min-width: 38px;
+      text-align: center;
+      user-select: none;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f0f23; }
+    ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="top-bar">
+  <a href="/" style="color:#7b68ee;font-size:0.8rem;text-decoration:none;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#7b68ee'">&larr; Dashboard</a>
+  <h1>Deathblood Lazer &mdash; Skeleton Editor</h1>
+  <div class="controls">
+    <label>Character:</label>
+    <select id="selCharacter"><option value="">-- loading... --</option></select>
+  </div>
+  <div class="dir-selector" id="dirSelector" style="display:none;">
+    <label>Direction:</label>
+    <button class="dir-btn active" data-dir="east">E</button>
+    <button class="dir-btn" data-dir="south-east">SE</button>
+    <button class="dir-btn" data-dir="south">S</button>
+    <button class="dir-btn" data-dir="south-west">SW</button>
+    <button class="dir-btn" data-dir="west">W</button>
+    <button class="dir-btn" data-dir="north-west">NW</button>
+    <button class="dir-btn" data-dir="north">N</button>
+    <button class="dir-btn" data-dir="north-east">NE</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- Canvas -->
+  <div class="canvas-area" id="canvasArea">
+    <div class="no-sprite" id="noSprite">
+      <p>Select a character from the dropdown to begin editing</p>
+    </div>
+    <canvas id="mainCanvas" style="display:none;"></canvas>
+    <div class="canvas-info" id="canvasInfo"></div>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="side-panel">
+    <!-- Selected Keypoint -->
+    <div class="panel-section">
+      <h3>Selected Keypoint</h3>
+      <div class="kp-info" id="kpInfo">
+        <div class="kp-none">Click a keypoint to select</div>
+      </div>
+    </div>
+
+    <!-- All Keypoints -->
+    <div class="panel-section">
+      <h3>Keypoints</h3>
+      <div class="kp-list" id="kpList"></div>
+    </div>
+
+    <!-- Animations -->
+    <div class="panel-section">
+      <h3>Animations</h3>
+      <div style="margin-bottom:6px;">
+        <input type="text" id="animName" placeholder="Animation name" style="width:100%;">
+      </div>
+      <ul class="anim-list" id="animList"></ul>
+      <div class="btn-row">
+        <button id="btnNewAnim">New Anim</button>
+        <button id="btnRenameAnim">Rename</button>
+        <button id="btnDeleteAnim" class="danger">Delete Anim</button>
+      </div>
+    </div>
+
+    <!-- Frames -->
+    <div class="panel-section">
+      <h3>Frames</h3>
+      <ul class="frame-list" id="frameList"></ul>
+      <div class="playback-controls" id="playbackControls">
+        <button class="btn-play" id="btnPlay" disabled>Play</button>
+        <div class="fps-control">
+          <button class="btn-fps" id="btnFpsMinus">&minus;</button>
+          <span class="fps-display" id="fpsDisplay">6 fps</span>
+          <button class="btn-fps" id="btnFpsPlus">+</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="btnAddFrame">Add Frame</button>
+        <button id="btnDupeFrame">Duplicate</button>
+        <button id="btnDeleteFrame" class="danger">Delete Frame</button>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-buttons">
+      <button id="btnSave" class="primary">Save skeleton.json</button>
+      <button id="btnCopyJSON">Copy Current Anim JSON</button>
+      <button id="btnExportDownload">Download skeleton.json</button>
+      <input type="file" id="fileLoadInput" accept=".json" style="display:none;">
+      <button id="btnLoadFile">Import JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+const KEYPOINT_LABELS = [
+  'NOSE', 'NECK',
+  'RIGHT SHOULDER', 'RIGHT ELBOW', 'RIGHT ARM',
+  'LEFT SHOULDER', 'LEFT ELBOW', 'LEFT ARM',
+  'RIGHT HIP', 'RIGHT KNEE', 'RIGHT LEG',
+  'LEFT HIP', 'LEFT KNEE', 'LEFT LEG',
+  'RIGHT EYE', 'LEFT EYE',
+  'RIGHT EAR', 'LEFT EAR'
+];
+
+const KEYPOINT_DISPLAY_NAMES = {
+  'NOSE': 'Nose',
+  'NECK': 'Neck',
+  'LEFT EYE': 'Left Eye',
+  'RIGHT EYE': 'Right Eye',
+  'LEFT EAR': 'Left Ear',
+  'RIGHT EAR': 'Right Ear',
+  'LEFT SHOULDER': 'Left Shoulder',
+  'RIGHT SHOULDER': 'Right Shoulder',
+  'LEFT ELBOW': 'Left Elbow',
+  'RIGHT ELBOW': 'Right Elbow',
+  'LEFT ARM': 'Left Hand',
+  'RIGHT ARM': 'Right Hand',
+  'LEFT HIP': 'Left Hip',
+  'RIGHT HIP': 'Right Hip',
+  'LEFT KNEE': 'Left Knee',
+  'RIGHT KNEE': 'Right Knee',
+  'LEFT LEG': 'Left Foot',
+  'RIGHT LEG': 'Right Foot',
+};
+
+function displayName(label) {
+  return KEYPOINT_DISPLAY_NAMES[label] || label;
+}
+
+const BONES = [
+  ['NOSE', 'NECK'],
+  ['NECK', 'LEFT SHOULDER'], ['LEFT SHOULDER', 'LEFT ELBOW'], ['LEFT ELBOW', 'LEFT ARM'],
+  ['NECK', 'RIGHT SHOULDER'], ['RIGHT SHOULDER', 'RIGHT ELBOW'], ['RIGHT ELBOW', 'RIGHT ARM'],
+  ['NECK', 'LEFT HIP'], ['LEFT HIP', 'LEFT KNEE'], ['LEFT KNEE', 'LEFT LEG'],
+  ['NECK', 'RIGHT HIP'], ['RIGHT HIP', 'RIGHT KNEE'], ['RIGHT KNEE', 'RIGHT LEG'],
+  ['NOSE', 'LEFT EYE'], ['LEFT EYE', 'LEFT EAR'],
+  ['NOSE', 'RIGHT EYE'], ['RIGHT EYE', 'RIGHT EAR']
+];
+
+const DEFAULT_POSITIONS = {
+  'NOSE':           { x: 0.353, y: 0.271 },
+  'LEFT EYE':       { x: 0.394, y: 0.241 },
+  'RIGHT EYE':      { x: 0.356, y: 0.246 },
+  'LEFT EAR':       { x: 0.461, y: 0.192 },
+  'RIGHT EAR':      { x: 0.394, y: 0.208 },
+  'LEFT SHOULDER':  { x: 0.632, y: 0.349 },
+  'RIGHT SHOULDER': { x: 0.304, y: 0.376 },
+  'LEFT ELBOW':     { x: 0.732, y: 0.509 },
+  'RIGHT ELBOW':    { x: 0.253, y: 0.520 },
+  'LEFT ARM':       { x: 0.757, y: 0.658 },
+  'RIGHT ARM':      { x: 0.172, y: 0.672 },
+  'LEFT HIP':       { x: 0.529, y: 0.596 },
+  'RIGHT HIP':      { x: 0.404, y: 0.604 },
+  'LEFT KNEE':      { x: 0.591, y: 0.747 },
+  'RIGHT KNEE':     { x: 0.320, y: 0.742 },
+  'LEFT LEG':       { x: 0.646, y: 0.872 },
+  'RIGHT LEG':      { x: 0.358, y: 0.853 },
+  'NECK':           { x: 0.468, y: 0.363 }
+};
+
+const SCALE = 3;
+const KP_RADIUS = 6;
+const KP_HIT_RADIUS = 10;
+
+function keypointColor(label) {
+  if (['NOSE', 'LEFT EYE', 'RIGHT EYE', 'LEFT EAR', 'RIGHT EAR'].includes(label)) return '#ffff00';
+  if (label === 'NECK') return '#ffffff';
+  if (label.startsWith('LEFT')) return '#00d4ff';
+  if (label.startsWith('RIGHT')) return '#ff40c0';
+  return '#ffffff';
+}
+
+function keypointGroup(label) {
+  if (['NOSE', 'LEFT EYE', 'RIGHT EYE', 'LEFT EAR', 'RIGHT EAR'].includes(label)) return 'head';
+  if (label === 'NECK') return 'spine';
+  if (label.startsWith('LEFT')) return 'left';
+  return 'right';
+}
+
+function boneColor(a, b) {
+  const ga = keypointGroup(a);
+  const gb = keypointGroup(b);
+  if (ga === 'head' && gb === 'head') return '#ffff00';
+  if (ga === 'spine' || gb === 'spine') {
+    const other = ga === 'spine' ? gb : ga;
+    if (other === 'head') return '#ffffff';
+    if (other === 'left') return '#00d4ff';
+    if (other === 'right') return '#ff40c0';
+    return '#ffffff';
+  }
+  if (ga === 'left' || gb === 'left') return '#00d4ff';
+  if (ga === 'right' || gb === 'right') return '#ff40c0';
+  return '#ffffff';
+}
+
+// ============================================================
+// STATE
+// ============================================================
+
+let characters = [];   // [{name, east_image, has_skeleton}, ...]
+let currentChar = null;
+let spriteImg = null;
+let spriteWidth = 0;
+let spriteHeight = 0;
+
+// Skeleton data
+let basePose = [];           // array of {label, x, y, z_index}
+let animations = {};         // { name: { direction: 'south-east', frames: [ [...kps], [...kps] ] } }
+let currentAnimName = null;
+let currentFrameIndex = 0;   // -1 = base pose
+let selectedKpIndex = -1;
+
+// Direction
+let currentDirection = 'south-east';   // active direction for sprite display
+let currentImages = {};          // {direction: url} from API
+
+// Drag
+let dragging = false;
+let hoveredKpIndex = -1;
+
+// Playback
+let isPlaying = false;
+let playbackIntervalId = null;
+let playbackFps = 6;
+const PLAYBACK_FPS_MIN = 2;
+const PLAYBACK_FPS_MAX = 16;
+
+// Canvas
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = 'toast', 2500);
+}
+
+function makeDefaultKeypoints() {
+  return KEYPOINT_LABELS.map(label => ({
+    label,
+    x: DEFAULT_POSITIONS[label]?.x ?? 0.5,
+    y: DEFAULT_POSITIONS[label]?.y ?? 0.5,
+    z_index: 0
+  }));
+}
+
+function cloneKeypoints(kps) {
+  return kps.map(kp => ({ ...kp }));
+}
+
+function currentKeypoints() {
+  if (currentFrameIndex < 0 || currentAnimName === null) return basePose;
+  const anim = animations[currentAnimName];
+  if (!anim || !anim.frames[currentFrameIndex]) {
+    console.warn('currentKeypoints() fell back to basePose — this should not happen during normal editing');
+    return basePose;
+  }
+  return anim.frames[currentFrameIndex];
+}
+
+function setCurrentKeypoints(kps) {
+  if (currentFrameIndex < 0 || currentAnimName === null) {
+    basePose = kps;
+  } else {
+    animations[currentAnimName].frames[currentFrameIndex] = kps;
+  }
+}
+
+// Snap normalized coord to pixel grid
+function snapToPixel(val, dimension) {
+  const px = Math.round(val * dimension);
+  return Math.max(0, Math.min(dimension, px)) / dimension;
+}
+
+// ============================================================
+// DEV SERVER API
+// ============================================================
+
+async function loadCharacters() {
+  const sel = document.getElementById('selCharacter');
+  try {
+    const resp = await fetch('/api/characters');
+    if (!resp.ok) throw new Error('Server returned ' + resp.status);
+    characters = await resp.json();
+    sel.innerHTML = '<option value="">-- select character --</option>';
+    for (const ch of characters) {
+      const opt = document.createElement('option');
+      opt.value = ch.name;
+      opt.textContent = ch.name + (ch.has_skeleton ? ' \u2713' : '');
+      sel.appendChild(opt);
+    }
+    if (characters.length > 0) toast(`Found ${characters.length} character(s)`, 'success');
+  } catch (e) {
+    sel.innerHTML = '<option value="">-- server unavailable --</option>';
+    toast('Could not reach dev server: ' + e.message, 'error');
+  }
+}
+
+async function loadCharacter(name) {
+  stopPlayback();
+  const entry = characters.find(c => c.name === name);
+  if (!entry) return;
+  currentChar = name;
+
+  // Store direction images from API
+  currentImages = entry.images || {};
+
+  // Default to east, fallback to first available
+  if (currentImages['south-east']) {
+    currentDirection = 'south-east';
+  } else {
+    const dirs = Object.keys(currentImages);
+    currentDirection = dirs.length > 0 ? dirs[0] : 'south-east';
+  }
+
+  // Load sprite for current direction
+  const url = currentImages[currentDirection];
+  spriteImg = null;
+  if (url) {
+    try {
+      await loadSpriteFromURL(url);
+    } catch (e) {
+      toast('Failed to load sprite for ' + name, 'error');
+      return;
+    }
+  } else {
+    // Fallback to east_image for backwards compat
+    if (entry.east_image) {
+      try {
+        await loadSpriteFromURL(entry.east_image);
+        currentDirection = 'south-east';
+      } catch (e) {
+        toast('Failed to load sprite for ' + name, 'error');
+        return;
+      }
+    } else {
+      toast('No sprite found for ' + name, 'error');
+      return;
+    }
+  }
+
+  // Show direction selector and update button states
+  updateDirSelector();
+  document.getElementById('dirSelector').style.display = 'flex';
+
+  // Load skeleton from server
+  await tryLoadSkeleton(entry.has_skeleton);
+
+  renderAll();
+}
+
+async function loadSpriteFromURL(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      spriteImg = img;
+      spriteWidth = img.naturalWidth;
+      spriteHeight = img.naturalHeight;
+      canvas.width = spriteWidth * SCALE;
+      canvas.height = spriteHeight * SCALE;
+      canvas.style.display = 'block';
+      document.getElementById('noSprite').style.display = 'none';
+      resolve();
+    };
+    img.onerror = () => {
+      toast('Failed to load sprite image', 'error');
+      reject();
+    };
+    img.src = url;
+  });
+}
+
+async function tryLoadSkeleton(hasSkeleton) {
+  // Reset to defaults first
+  basePose = makeDefaultKeypoints();
+  animations = {};
+  currentAnimName = null;
+  currentFrameIndex = -1;
+  selectedKpIndex = -1;
+
+  if (hasSkeleton) {
+    try {
+      const resp = await fetch(`/api/characters/${currentChar}/skeleton`);
+      if (resp.ok) {
+        const data = await resp.json();
+        loadSkeletonData(data);
+        toast('Loaded skeleton.json', 'success');
+      } else {
+        toast('Using default keypoints (failed to load skeleton)', '');
+      }
+    } catch (e) {
+      toast('Using default keypoints (server error)', '');
+    }
+  } else {
+    toast('Using default keypoints (no skeleton.json found)', '');
+  }
+
+  rebuildUI();
+}
+
+function loadSkeletonData(data) {
+  if (data.base_pose && Array.isArray(data.base_pose)) {
+    basePose = KEYPOINT_LABELS.map(label => {
+      const found = data.base_pose.find(kp => kp.label === label);
+      return found ? { ...found } : { label, x: DEFAULT_POSITIONS[label]?.x ?? 0.5, y: DEFAULT_POSITIONS[label]?.y ?? 0.5, z_index: 0 };
+    });
+  }
+
+  if (data.animations) {
+    animations = {};
+    for (const [animName, animData] of Object.entries(data.animations)) {
+      const anim = {
+        direction: animData.direction || 'south-east',
+        frames: (animData.frames || []).map(frame =>
+          KEYPOINT_LABELS.map(label => {
+            const found = frame.find(kp => kp.label === label);
+            return found ? { ...found } : { label, x: DEFAULT_POSITIONS[label]?.x ?? 0.5, y: DEFAULT_POSITIONS[label]?.y ?? 0.5, z_index: 0 };
+          })
+        )
+      };
+      if (anim.frames.length === 0) {
+        anim.frames.push(cloneKeypoints(basePose));
+      }
+      animations[animName] = anim;
+    }
+  }
+
+  // Select first animation if available
+  const animNames = Object.keys(animations);
+  if (animNames.length > 0) {
+    currentAnimName = animNames[0];
+    currentFrameIndex = 0;
+  } else {
+    currentAnimName = null;
+    currentFrameIndex = -1;
+  }
+}
+
+function buildSaveData() {
+  return {
+    character: currentChar,
+    sprite_width: spriteWidth,
+    sprite_height: spriteHeight,
+    base_pose: cloneKeypoints(basePose),
+    animations: Object.fromEntries(
+      Object.entries(animations).map(([name, anim]) => [
+        name,
+        {
+          direction: anim.direction,
+          frames: anim.frames.map(f => cloneKeypoints(f))
+        }
+      ])
+    )
+  };
+}
+
+async function saveSkeleton() {
+  if (!currentChar) {
+    toast('No character selected', 'error');
+    return;
+  }
+  const data = buildSaveData();
+  try {
+    const resp = await fetch(`/api/characters/${currentChar}/skeleton`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data, null, 2)
+    });
+    if (resp.ok) {
+      toast('Saved skeleton.json', 'success');
+      // Update the character entry to reflect it now has a skeleton
+      const entry = characters.find(c => c.name === currentChar);
+      if (entry) entry.has_skeleton = true;
+    } else {
+      toast('Save failed: server returned ' + resp.status, 'error');
+    }
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'error');
+  }
+}
+
+function downloadJSON(json) {
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'skeleton.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+  toast('Downloaded skeleton.json', 'success');
+}
+
+function copyAnimJSON() {
+  if (currentAnimName === null) {
+    toast('No animation selected', 'error');
+    return;
+  }
+  const anim = animations[currentAnimName];
+  const data = {
+    [currentAnimName]: {
+      direction: anim.direction,
+      frames: anim.frames.map(f => cloneKeypoints(f))
+    }
+  };
+  navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+    .then(() => toast('Copied to clipboard', 'success'))
+    .catch(() => toast('Clipboard write failed', 'error'));
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+
+let animFrameId = null;
+
+function scheduleRender() {
+  if (animFrameId) return;
+  animFrameId = requestAnimationFrame(() => {
+    animFrameId = null;
+    render();
+  });
+}
+
+function renderAll() {
+  rebuildUI();
+  scheduleRender();
+}
+
+function render() {
+  if (!spriteImg) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Draw sprite
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(spriteImg, 0, 0, w, h);
+
+  // Draw checkerboard behind transparent areas (subtle)
+  // Skip for performance, the dark bg is enough
+
+  const kps = currentKeypoints();
+
+  // Draw bones
+  ctx.lineWidth = 2;
+  for (const [labelA, labelB] of BONES) {
+    const a = kps.find(k => k.label === labelA);
+    const b = kps.find(k => k.label === labelB);
+    if (!a || !b) continue;
+    ctx.strokeStyle = boneColor(labelA, labelB);
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(a.x * spriteWidth * SCALE, a.y * spriteHeight * SCALE);
+    ctx.lineTo(b.x * spriteWidth * SCALE, b.y * spriteHeight * SCALE);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Draw keypoints
+  for (let i = 0; i < kps.length; i++) {
+    const kp = kps[i];
+    const cx = kp.x * spriteWidth * SCALE;
+    const cy = kp.y * spriteHeight * SCALE;
+    const color = keypointColor(kp.label);
+    const isSelected = (i === selectedKpIndex);
+    const isHovered = (i === hoveredKpIndex);
+
+    // Outer ring
+    if (isSelected) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, KP_RADIUS + 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Filled circle
+    ctx.fillStyle = color;
+    ctx.globalAlpha = isSelected ? 1 : (isHovered ? 0.9 : 0.7);
+    ctx.beginPath();
+    ctx.arc(cx, cy, isSelected ? KP_RADIUS + 1 : KP_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Border
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, isSelected ? KP_RADIUS + 1 : KP_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Label on hover or selected
+    if (isHovered || isSelected) {
+      ctx.font = '11px Segoe UI, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      const tx = cx + KP_RADIUS + 6;
+      const ty = cy - KP_RADIUS;
+      ctx.strokeText(displayName(kp.label), tx, ty);
+      ctx.fillText(displayName(kp.label), tx, ty);
+    }
+  }
+
+  // Canvas info
+  const info = document.getElementById('canvasInfo');
+  const frameLabel = currentFrameIndex < 0 ? 'Base Pose' :
+    (currentAnimName ? `${currentAnimName} / Frame ${currentFrameIndex}` : 'Base Pose');
+  info.textContent = `${spriteWidth}x${spriteHeight}px | Scale ${SCALE}x | ${frameLabel}`;
+}
+
+// ============================================================
+// UI BUILDING
+// ============================================================
+
+function updateDirSelector() {
+  const buttons = document.querySelectorAll('#dirSelector .dir-btn');
+  buttons.forEach(btn => {
+    const dir = btn.dataset.dir;
+    const hasImage = !!currentImages[dir];
+    btn.classList.toggle('active', dir === currentDirection);
+    btn.classList.toggle('missing', !hasImage);
+  });
+}
+
+async function switchDirection(dir) {
+  if (dir === currentDirection) return;
+  if (!currentImages[dir]) return;
+  stopPlayback();
+
+  currentDirection = dir;
+  try {
+    await loadSpriteFromURL(currentImages[dir]);
+  } catch (e) {
+    toast('Failed to load ' + dir + ' sprite', 'error');
+    return;
+  }
+  updateDirSelector();
+  scheduleRender();
+}
+
+function rebuildUI() {
+  rebuildKpList();
+  rebuildAnimList();
+  rebuildFrameList();
+  updateKpInfo();
+  updatePlayButton();
+}
+
+function rebuildKpList() {
+  const container = document.getElementById('kpList');
+  container.innerHTML = '';
+  KEYPOINT_LABELS.forEach((label, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'kp-chip ' + keypointGroup(label) + (i === selectedKpIndex ? ' selected' : '');
+    chip.textContent = displayName(label);
+    chip.onclick = () => {
+      selectedKpIndex = i;
+      rebuildKpList();
+      updateKpInfo();
+      scheduleRender();
+    };
+    container.appendChild(chip);
+  });
+}
+
+function updateKpInfo() {
+  const el = document.getElementById('kpInfo');
+  if (selectedKpIndex < 0) {
+    el.innerHTML = '<div class="kp-none">Click a keypoint to select</div>';
+    return;
+  }
+  const kps = currentKeypoints();
+  const kp = kps[selectedKpIndex];
+  if (!kp) {
+    el.innerHTML = '<div class="kp-none">Invalid keypoint</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="kp-label" style="color:${keypointColor(kp.label)}">${displayName(kp.label)}</div>
+    <div class="kp-coords">
+      X: <span>${kp.x.toFixed(3)}</span> &nbsp;
+      Y: <span>${kp.y.toFixed(3)}</span> &nbsp;
+      Pixel: <span>(${Math.round(kp.x * spriteWidth)}, ${Math.round(kp.y * spriteHeight)})</span>
+    </div>
+  `;
+}
+
+function rebuildAnimList() {
+  const ul = document.getElementById('animList');
+  ul.innerHTML = '';
+
+  // Base pose entry
+  const baseLi = document.createElement('li');
+  baseLi.textContent = 'Base Pose';
+  if (currentAnimName === null) baseLi.classList.add('active');
+  baseLi.onclick = () => {
+    stopPlayback();
+    currentAnimName = null;
+    currentFrameIndex = -1;
+    selectedKpIndex = -1;
+    rebuildUI();
+    scheduleRender();
+  };
+  ul.appendChild(baseLi);
+
+  // Animations
+  for (const name of Object.keys(animations)) {
+    const li = document.createElement('li');
+    li.textContent = name;
+    if (currentAnimName === name) li.classList.add('active');
+    li.onclick = () => {
+      stopPlayback();
+      currentAnimName = name;
+      currentFrameIndex = 0;
+      selectedKpIndex = -1;
+      document.getElementById('animName').value = name;
+      rebuildUI();
+      scheduleRender();
+    };
+    ul.appendChild(li);
+  }
+}
+
+function rebuildFrameList() {
+  const ul = document.getElementById('frameList');
+  ul.innerHTML = '';
+
+  if (currentAnimName === null) {
+    const li = document.createElement('li');
+    li.classList.add('active');
+    li.textContent = 'Base Pose (single frame)';
+    ul.appendChild(li);
+    return;
+  }
+
+  const anim = animations[currentAnimName];
+  if (!anim) return;
+
+  anim.frames.forEach((_, i) => {
+    const li = document.createElement('li');
+    li.textContent = `Frame ${i}` + (i === 0 ? ' (Base)' : '');
+    if (i === currentFrameIndex) li.classList.add('active');
+    li.onclick = () => {
+      stopPlayback();
+      currentFrameIndex = i;
+      selectedKpIndex = -1;
+      rebuildUI();
+      scheduleRender();
+    };
+    ul.appendChild(li);
+  });
+}
+
+// ============================================================
+// ANIMATION MANAGEMENT
+// ============================================================
+
+function newAnimation() {
+  stopPlayback();
+  if (!spriteImg) { toast('Load a character first', 'error'); return; }
+  const nameInput = document.getElementById('animName');
+  let name = nameInput.value.trim();
+  if (!name) name = 'Animation_' + (Object.keys(animations).length + 1);
+  if (animations[name]) {
+    toast('Animation "' + name + '" already exists', 'error');
+    return;
+  }
+  animations[name] = {
+    direction: 'south-east',
+    frames: [cloneKeypoints(basePose)]
+  };
+  currentAnimName = name;
+  currentFrameIndex = 0;
+  selectedKpIndex = -1;
+  nameInput.value = name;
+  rebuildUI();
+  scheduleRender();
+  toast('Created animation: ' + name, 'success');
+}
+
+function renameAnimation() {
+  stopPlayback();
+  if (currentAnimName === null) { toast('Select an animation first', 'error'); return; }
+  const nameInput = document.getElementById('animName');
+  const newName = nameInput.value.trim();
+  if (!newName) { toast('Enter a name', 'error'); return; }
+  if (newName === currentAnimName) return;
+  if (animations[newName]) { toast('Name already in use', 'error'); return; }
+  animations[newName] = animations[currentAnimName];
+  delete animations[currentAnimName];
+  currentAnimName = newName;
+  rebuildUI();
+  scheduleRender();
+  toast('Renamed to: ' + newName, 'success');
+}
+
+function deleteAnimation() {
+  stopPlayback();
+  if (currentAnimName === null) { toast('Select an animation first', 'error'); return; }
+  if (!confirm('Delete animation "' + currentAnimName + '"?')) return;
+  delete animations[currentAnimName];
+  currentAnimName = null;
+  currentFrameIndex = -1;
+  selectedKpIndex = -1;
+  rebuildUI();
+  scheduleRender();
+  toast('Deleted animation', 'success');
+}
+
+function addFrame() {
+  stopPlayback();
+  if (!spriteImg) { toast('Load a character first', 'error'); return; }
+  if (currentAnimName === null) { toast('Select an animation first', 'error'); return; }
+  const anim = animations[currentAnimName];
+  const source = currentFrameIndex >= 0 && anim.frames[currentFrameIndex]
+    ? anim.frames[currentFrameIndex]
+    : basePose;
+  anim.frames.push(cloneKeypoints(source));
+  currentFrameIndex = anim.frames.length - 1;
+  selectedKpIndex = -1;
+  rebuildUI();
+  scheduleRender();
+  toast('Added frame ' + currentFrameIndex, 'success');
+}
+
+function duplicateFrame() {
+  stopPlayback();
+  if (currentAnimName === null) { toast('Select an animation first', 'error'); return; }
+  const anim = animations[currentAnimName];
+  if (currentFrameIndex < 0 || !anim.frames[currentFrameIndex]) { toast('No frame selected', 'error'); return; }
+  const copy = cloneKeypoints(anim.frames[currentFrameIndex]);
+  anim.frames.splice(currentFrameIndex + 1, 0, copy);
+  currentFrameIndex++;
+  rebuildUI();
+  scheduleRender();
+  toast('Duplicated frame', 'success');
+}
+
+function deleteFrame() {
+  stopPlayback();
+  if (currentAnimName === null) { toast('Select an animation first', 'error'); return; }
+  const anim = animations[currentAnimName];
+  if (anim.frames.length <= 1) { toast('Cannot delete the only frame', 'error'); return; }
+  anim.frames.splice(currentFrameIndex, 1);
+  if (currentFrameIndex >= anim.frames.length) currentFrameIndex = anim.frames.length - 1;
+  selectedKpIndex = -1;
+  rebuildUI();
+  scheduleRender();
+  toast('Deleted frame', 'success');
+}
+
+// ============================================================
+// ANIMATION PLAYBACK
+// ============================================================
+
+function updatePlayButton() {
+  const btn = document.getElementById('btnPlay');
+  const canPlay = currentAnimName !== null && animations[currentAnimName] && animations[currentAnimName].frames.length > 1;
+  btn.disabled = !canPlay && !isPlaying;
+  if (isPlaying) {
+    btn.textContent = 'Stop';
+    btn.classList.add('playing');
+  } else {
+    btn.textContent = 'Play';
+    btn.classList.remove('playing');
+  }
+}
+
+function updateFpsDisplay() {
+  document.getElementById('fpsDisplay').textContent = playbackFps + ' fps';
+}
+
+function startPlayback() {
+  if (currentAnimName === null) {
+    toast('Select an animation first', 'error');
+    return;
+  }
+  const anim = animations[currentAnimName];
+  if (!anim || anim.frames.length <= 1) {
+    toast('Need 2+ frames to play', 'error');
+    return;
+  }
+
+  isPlaying = true;
+  selectedKpIndex = -1;
+  updatePlayButton();
+  rebuildKpList();
+  updateKpInfo();
+
+  playbackIntervalId = setInterval(() => {
+    const anim = animations[currentAnimName];
+    if (!anim) { stopPlayback(); return; }
+    currentFrameIndex = (currentFrameIndex + 1) % anim.frames.length;
+    rebuildFrameList();
+    scheduleRender();
+  }, 1000 / playbackFps);
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  if (playbackIntervalId !== null) {
+    clearInterval(playbackIntervalId);
+    playbackIntervalId = null;
+  }
+  updatePlayButton();
+}
+
+function togglePlayback() {
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    startPlayback();
+  }
+}
+
+function adjustFps(delta) {
+  const wasPlaying = isPlaying;
+  if (wasPlaying) {
+    stopPlayback();
+  }
+  playbackFps = Math.max(PLAYBACK_FPS_MIN, Math.min(PLAYBACK_FPS_MAX, playbackFps + delta));
+  updateFpsDisplay();
+  if (wasPlaying) {
+    startPlayback();
+  }
+}
+
+// ============================================================
+// MOUSE / DRAG INTERACTION
+// ============================================================
+
+function getCanvasMousePos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+function findKpAtPos(mx, my) {
+  const kps = currentKeypoints();
+  let closest = -1;
+  let closestDist = Infinity;
+  for (let i = 0; i < kps.length; i++) {
+    const cx = kps[i].x * spriteWidth * SCALE;
+    const cy = kps[i].y * spriteHeight * SCALE;
+    const dist = Math.hypot(mx - cx, my - cy);
+    if (dist < KP_HIT_RADIUS && dist < closestDist) {
+      closestDist = dist;
+      closest = i;
+    }
+  }
+  return closest;
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  if (!spriteImg || isPlaying) return;
+  const { x, y } = getCanvasMousePos(e);
+  const idx = findKpAtPos(x, y);
+  if (idx >= 0) {
+    selectedKpIndex = idx;
+    dragging = true;
+    rebuildKpList();
+    updateKpInfo();
+    scheduleRender();
+  } else {
+    selectedKpIndex = -1;
+    rebuildKpList();
+    updateKpInfo();
+    scheduleRender();
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!spriteImg || isPlaying) return;
+  const { x, y } = getCanvasMousePos(e);
+
+  if (dragging && selectedKpIndex >= 0) {
+    const kps = currentKeypoints();
+    const kp = kps[selectedKpIndex];
+    kp.x = snapToPixel(x / (spriteWidth * SCALE), spriteWidth);
+    kp.y = snapToPixel(y / (spriteHeight * SCALE), spriteHeight);
+    updateKpInfo();
+    scheduleRender();
+    return;
+  }
+
+  const idx = findKpAtPos(x, y);
+  if (idx !== hoveredKpIndex) {
+    hoveredKpIndex = idx;
+    canvas.style.cursor = idx >= 0 ? 'grab' : 'crosshair';
+    scheduleRender();
+  }
+});
+
+canvas.addEventListener('mouseup', () => { dragging = false; });
+canvas.addEventListener('mouseleave', () => {
+  dragging = false;
+  if (hoveredKpIndex >= 0) {
+    hoveredKpIndex = -1;
+    scheduleRender();
+  }
+});
+
+// ============================================================
+// EVENT WIRING
+// ============================================================
+
+document.getElementById('selCharacter').addEventListener('change', (e) => {
+  if (e.target.value) loadCharacter(e.target.value);
+});
+
+document.getElementById('dirSelector').addEventListener('click', (e) => {
+  const btn = e.target.closest('.dir-btn');
+  if (!btn || btn.classList.contains('missing')) return;
+  switchDirection(btn.dataset.dir);
+});
+
+document.getElementById('btnNewAnim').addEventListener('click', newAnimation);
+document.getElementById('btnRenameAnim').addEventListener('click', renameAnimation);
+document.getElementById('btnDeleteAnim').addEventListener('click', deleteAnimation);
+
+document.getElementById('btnAddFrame').addEventListener('click', addFrame);
+document.getElementById('btnDupeFrame').addEventListener('click', duplicateFrame);
+document.getElementById('btnDeleteFrame').addEventListener('click', deleteFrame);
+
+document.getElementById('btnPlay').addEventListener('click', togglePlayback);
+document.getElementById('btnFpsMinus').addEventListener('click', () => adjustFps(-2));
+document.getElementById('btnFpsPlus').addEventListener('click', () => adjustFps(2));
+
+document.getElementById('btnSave').addEventListener('click', saveSkeleton);
+document.getElementById('btnCopyJSON').addEventListener('click', copyAnimJSON);
+
+document.getElementById('btnExportDownload').addEventListener('click', () => {
+  const data = buildSaveData();
+  downloadJSON(JSON.stringify(data, null, 2));
+});
+
+document.getElementById('btnLoadFile').addEventListener('click', () => {
+  document.getElementById('fileLoadInput').click();
+});
+
+document.getElementById('fileLoadInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      stopPlayback();
+      const data = JSON.parse(reader.result);
+      loadSkeletonData(data);
+      rebuildUI();
+      scheduleRender();
+      toast('Loaded skeleton from file', 'success');
+    } catch (err) {
+      toast('Invalid JSON: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  // Ctrl+S to save
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveSkeleton();
+  }
+  // Space to toggle playback (when not in an input field)
+  if (e.key === ' ' && spriteImg) {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    e.preventDefault();
+    togglePlayback();
+    return;
+  }
+  // Block editing shortcuts during playback
+  if (isPlaying) return;
+  // Delete keypoint position (reset to default)
+  if (e.key === 'Delete' && selectedKpIndex >= 0) {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const kps = currentKeypoints();
+    const kp = kps[selectedKpIndex];
+    const def = DEFAULT_POSITIONS[kp.label];
+    if (def) {
+      kp.x = def.x;
+      kp.y = def.y;
+      updateKpInfo();
+      scheduleRender();
+      toast('Reset ' + displayName(kp.label) + ' to default', '');
+    }
+  }
+  // Arrow keys for fine adjustment
+  if (selectedKpIndex >= 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    e.preventDefault();
+    const kps = currentKeypoints();
+    const kp = kps[selectedKpIndex];
+    const step = 1; // 1 pixel
+    switch (e.key) {
+      case 'ArrowUp':    kp.y = Math.max(0, kp.y - step / spriteHeight); break;
+      case 'ArrowDown':  kp.y = Math.min(1, kp.y + step / spriteHeight); break;
+      case 'ArrowLeft':  kp.x = Math.max(0, kp.x - step / spriteWidth); break;
+      case 'ArrowRight': kp.x = Math.min(1, kp.x + step / spriteWidth); break;
+    }
+    kp.x = snapToPixel(kp.x, spriteWidth);
+    kp.y = snapToPixel(kp.y, spriteHeight);
+    updateKpInfo();
+    scheduleRender();
+  }
+  // Tab through keypoints
+  if (e.key === 'Tab' && spriteImg) {
+    e.preventDefault();
+    if (e.shiftKey) {
+      selectedKpIndex = selectedKpIndex <= 0 ? KEYPOINT_LABELS.length - 1 : selectedKpIndex - 1;
+    } else {
+      selectedKpIndex = (selectedKpIndex + 1) % KEYPOINT_LABELS.length;
+    }
+    rebuildKpList();
+    updateKpInfo();
+    scheduleRender();
+  }
+});
+
+// Initial UI
+rebuildUI();
+
+// Auto-load characters from dev server on page load
+document.addEventListener('DOMContentLoaded', loadCharacters);
+</script>
+</body>
+</html>
