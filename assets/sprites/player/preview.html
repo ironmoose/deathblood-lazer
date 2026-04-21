@@ -307,18 +307,50 @@
         <div class="card-row">
           <div class="anim-card" id="anim-walk">
             <div class="anim-label">Walk</div>
-            <img src="../characters/wiley/frames/walk_frame0.png" alt="Walk" class="ref-img" data-scale="1" id="anim-img-walk">
+            <img src="../characters/wiley/frames/inpaint/cc_walk_frame0.png" alt="Walk" class="ref-img" data-scale="2" id="anim-img-walk">
             <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
               <button id="btn-walk" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
               <span id="counter-walk" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
             </div>
           </div>
-          <div class="anim-card" id="anim-breathing-idle">
-            <div class="anim-label">Breathing Idle</div>
-            <img src="../characters/wiley/frames/breathing_idle_frame0.png" alt="Breathing Idle" class="ref-img" data-scale="1" id="anim-img-breathing-idle">
+          <div class="anim-card" id="anim-wiley-attack">
+            <div class="anim-label">Attack</div>
+            <img src="../characters/wiley/frames/inpaint/cc_attack_frame0.png" alt="Attack" class="ref-img" data-scale="2" id="anim-img-wiley-attack">
             <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
-              <button id="btn-breathing-idle" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
-              <span id="counter-breathing-idle" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 4</span>
+              <button id="btn-wiley-attack" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-wiley-attack" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card" id="anim-wiley-attack2">
+            <div class="anim-label">Attack 2 (Slam)</div>
+            <img src="../characters/wiley/frames/inpaint/cc_attack2_frame0.png" alt="Attack 2" class="ref-img" data-scale="2" id="anim-img-wiley-attack2">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-wiley-attack2" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-wiley-attack2" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card" id="anim-wiley-attack3">
+            <div class="anim-label">Attack 3 (Kick)</div>
+            <img src="../characters/wiley/frames/inpaint/cc_attack3_frame0.png" alt="Attack 3" class="ref-img" data-scale="2" id="anim-img-wiley-attack3">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-wiley-attack3" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-wiley-attack3" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card" id="anim-wiley-hurt">
+            <div class="anim-label">Hurt</div>
+            <img src="../characters/wiley/frames/inpaint/cc_hurt_frame0.png" alt="Hurt" class="ref-img" data-scale="2" id="anim-img-wiley-hurt">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-wiley-hurt" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-wiley-hurt" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card" id="anim-wiley-death">
+            <div class="anim-label">Death</div>
+            <img src="../characters/wiley/frames/inpaint/cc_death_frame0.png" alt="Death" class="ref-img" data-scale="2" id="anim-img-wiley-death">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-wiley-death" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-wiley-death" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
             </div>
           </div>
         </div>
@@ -382,7 +414,60 @@
           </div>
         </div>
 
-        <p class="muted-note">Animations will be generated after character is approved</p>
+        <div class="section-header">Sprite Sheets (In-Game)</div>
+
+        <div class="card-row">
+          <div class="anim-card">
+            <div class="anim-label">Walk (9 frames)</div>
+            <img src="../characters/father_stu/frames/inpaint/cc_walk_frame0.png" alt="Walk Animation" class="ref-img" data-scale="2" id="anim-img-stu-walk">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-stu-walk" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-stu-walk" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">Attack (9 frames)</div>
+            <img src="../characters/father_stu/frames/inpaint/cc_attack_frame0.png" alt="Attack Animation" class="ref-img" data-scale="2" id="anim-img-stu-attack">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-stu-attack" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-stu-attack" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">Attack 2 (Slam)</div>
+            <img src="../characters/father_stu/frames/inpaint/cc_attack2_frame0.png" alt="Attack 2 Animation" class="ref-img" data-scale="2" id="anim-img-stu-attack2">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-stu-attack2" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-stu-attack2" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card">
+            <div class="anim-label">Attack 3 (Kick)</div>
+            <img src="../characters/father_stu/frames/inpaint/cc_attack3_frame0.png" alt="Attack 3 Animation" class="ref-img" data-scale="2" id="anim-img-stu-attack3">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-stu-attack3" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-stu-attack3" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card" id="anim-stu-hurt">
+            <div class="anim-label">Hurt</div>
+            <img src="../characters/father_stu/frames/inpaint/cc_hurt_frame0.png" alt="Hurt" class="ref-img" data-scale="2" id="anim-img-stu-hurt">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-stu-hurt" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-stu-hurt" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+          <div class="anim-card" id="anim-stu-death">
+            <div class="anim-label">Death</div>
+            <img src="../characters/father_stu/frames/inpaint/cc_death_frame0.png" alt="Death" class="ref-img" data-scale="2" id="anim-img-stu-death">
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <button id="btn-stu-death" style="background: #00ff88; color: #0f0f23; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Play</button>
+              <span id="counter-stu-death" style="color: #888; font-family: monospace; font-size: 0.8rem;">Frame 1 / 9</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="muted-note">Jump is placeholder single-frame.</p>
 
       </div>
 
@@ -459,8 +544,138 @@
 
     // ---- Reusable Animation System ----
     var animConfigs = [
-      {id: 'walk', frames: 9, prefix: '../characters/wiley/frames/walk_frame', fps: 8},
-      {id: 'breathing-idle', frames: 4, prefix: '../characters/wiley/frames/breathing_idle_frame', fps: 6},
+      {id: 'walk', frames: 9, framePaths: [
+        '../characters/wiley/frames/inpaint/cc_walk_frame0.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame1.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame2.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame3.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame4.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame5.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame6.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame7.png',
+        '../characters/wiley/frames/inpaint/cc_walk_frame8.png'
+      ], fps: 8},
+      {id: 'wiley-attack', frames: 9, framePaths: [
+        '../characters/wiley/frames/inpaint/cc_attack_frame0.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame1.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame2.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame3.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame4.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame5.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame6.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame7.png',
+        '../characters/wiley/frames/inpaint/cc_attack_frame8.png'
+      ], fps: 12},
+      {id: 'stu-walk', frames: 9, framePaths: [
+        '../characters/father_stu/frames/inpaint/cc_walk_frame0.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame1.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame2.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame3.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame4.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame5.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame6.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame7.png',
+        '../characters/father_stu/frames/inpaint/cc_walk_frame8.png'
+      ], fps: 10},
+      {id: 'stu-attack', frames: 9, framePaths: [
+        '../characters/father_stu/frames/inpaint/cc_attack_frame0.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame1.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame2.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame3.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame4.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame5.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame6.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame7.png',
+        '../characters/father_stu/frames/inpaint/cc_attack_frame8.png'
+      ], fps: 12},
+      {id: 'stu-attack2', frames: 9, framePaths: [
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame0.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame1.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame2.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame3.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame4.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame5.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame6.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame7.png',
+        '../characters/father_stu/frames/inpaint/cc_attack2_frame8.png'
+      ], fps: 12},
+      {id: 'stu-attack3', frames: 9, framePaths: [
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame0.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame1.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame2.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame3.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame4.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame5.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame6.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame7.png',
+        '../characters/father_stu/frames/inpaint/cc_attack3_frame8.png'
+      ], fps: 12},
+      {id: 'wiley-attack2', frames: 9, framePaths: [
+        '../characters/wiley/frames/inpaint/cc_attack2_frame0.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame1.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame2.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame3.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame4.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame5.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame6.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame7.png',
+        '../characters/wiley/frames/inpaint/cc_attack2_frame8.png'
+      ], fps: 12},
+      {id: 'wiley-attack3', frames: 9, framePaths: [
+        '../characters/wiley/frames/inpaint/cc_attack3_frame0.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame1.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame2.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame3.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame4.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame5.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame6.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame7.png',
+        '../characters/wiley/frames/inpaint/cc_attack3_frame8.png'
+      ], fps: 12},
+      {id: 'stu-hurt', frames: 9, framePaths: [
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame0.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame1.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame2.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame3.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame4.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame5.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame6.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame7.png',
+        '../characters/father_stu/frames/inpaint/cc_hurt_frame8.png'
+      ], fps: 10},
+      {id: 'stu-death', frames: 9, framePaths: [
+        '../characters/father_stu/frames/inpaint/cc_death_frame0.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame1.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame2.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame3.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame4.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame5.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame6.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame7.png',
+        '../characters/father_stu/frames/inpaint/cc_death_frame8.png'
+      ], fps: 8},
+      {id: 'wiley-hurt', frames: 9, framePaths: [
+        '../characters/wiley/frames/inpaint/cc_hurt_frame0.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame1.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame2.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame3.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame4.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame5.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame6.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame7.png',
+        '../characters/wiley/frames/inpaint/cc_hurt_frame8.png'
+      ], fps: 10},
+      {id: 'wiley-death', frames: 9, framePaths: [
+        '../characters/wiley/frames/inpaint/cc_death_frame0.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame1.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame2.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame3.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame4.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame5.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame6.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame7.png',
+        '../characters/wiley/frames/inpaint/cc_death_frame8.png'
+      ], fps: 8},
     ];
 
     var animStates = {};
@@ -494,7 +709,11 @@
       if (state.interval) clearInterval(state.interval);
       state.interval = setInterval(function() {
         state.index = (state.index + 1) % state.cfg.frames;
-        state.img.src = state.cfg.prefix + state.index + '.png';
+        if (state.cfg.framePaths) {
+          state.img.src = state.cfg.framePaths[state.index];
+        } else {
+          state.img.src = state.cfg.prefix + state.index + '.png';
+        }
         state.counter.textContent = 'Frame ' + (state.index + 1) + ' / ' + state.cfg.frames;
       }, 1000 / state.cfg.fps);
       state.playing = true;

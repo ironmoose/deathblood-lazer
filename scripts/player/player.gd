@@ -17,21 +17,36 @@ extends CharacterBody2D
 @export var move_speed: float = 200.0
 
 ## Top edge of the playable belt (Y coordinate).
-@export var belt_min_y: float = 115.0
+@export var belt_min_y: float = 160.0
 
 ## Bottom edge of the playable belt (Y coordinate).
-@export var belt_max_y: float = 235.0
+@export var belt_max_y: float = 340.0
 
 ## Vertical speed multiplier to give a depth / perspective feel.
 const VERTICAL_SPEED_FACTOR: float = 0.7
 
 ## Frame size in the sprite sheets (all sheets use 96x96 frames).
-const FRAME_SIZE: int = 96
+var _frame_size: int = 96
+var _feet_padding: float = 0.0
 
 ## Sprite folder paths keyed by player_id.
 const SPRITE_PATHS: Dictionary = {
-	1: "res://assets/sprites/enemies/Craftpix_Orc/Orc_Berserk/",
-	2: "res://assets/sprites/characters/Warrior_1/",
+	1: "res://assets/sprites/characters/father_stu/",
+	2: "res://assets/sprites/characters/wiley/",
+}
+
+## Target visual height in pixels per player. Stu is a stout dwarf (smaller),
+## Wiley is a towering wolf-dragon berserker (bigger than standard enemies).
+const SPRITE_TARGET_SIZE: Dictionary = {
+	1: 80.0,   # Father Stu — dwarf, shorter than orcs (96px)
+	2: 120.0,  # Wiley — berserker, taller than orcs
+}
+
+## Transparent padding below feet in the source sprite (pixels, unscaled).
+## Used to adjust offset so feet sit on the ground instead of floating.
+const SPRITE_FEET_PADDING: Dictionary = {
+	1: 57.0,   # Father Stu
+	2: 67.0,   # Wiley
 }
 
 ## Mapping from sprite-sheet file base name to animation name.
@@ -55,7 +70,7 @@ const LOOPING_ANIMS: Array[String] = ["idle", "walk", "run"]
 const DEFAULT_ANIM_FPS: float = 10.0
 
 ## FPS for attack animations (slightly faster).
-const ATTACK_ANIM_FPS: float = 12.0
+const ATTACK_ANIM_FPS: float = 20.0
 
 ## Light-attack combo window.
 const COMBO_WINDOW: float = 0.5  # seconds to chain next hit
@@ -170,7 +185,12 @@ func _ready() -> void:
 	animated_sprite.sprite_frames = _load_sprite_frames(folder)
 	# Offset the sprite so the feet (bottom of the frame) sit at the origin.
 	# AnimatedSprite2D centers the texture by default, so -half moves bottom to origin.
-	animated_sprite.offset = Vector2(0, -FRAME_SIZE / 2.0)
+	_feet_padding = SPRITE_FEET_PADDING.get(player_id, 0.0)
+	animated_sprite.offset = Vector2(0, -_frame_size / 2.0 + _feet_padding)
+	# Scale sprite to per-character target size.
+	var target_size: float = SPRITE_TARGET_SIZE.get(player_id, 96.0)
+	var sprite_scale: float = target_size / float(_frame_size)
+	animated_sprite.scale = Vector2(sprite_scale, sprite_scale)
 	animated_sprite.animation_finished.connect(_on_animation_finished)
 	_setup_shadow()
 	_setup_debug_label()
@@ -200,6 +220,24 @@ func _ready() -> void:
 	var frost_reaver: WeaponData = load("res://data/weapons/frost_reaver.tres") as WeaponData
 	if frost_reaver:
 		equip_weapon(frost_reaver)
+
+	# Apply hit flash shader material.
+	var shader_mat := ShaderMaterial.new()
+	shader_mat.shader = load("res://shaders/hit_flash.gdshader")
+	animated_sprite.material = shader_mat
+
+	# Player glow light for synthwave atmosphere.
+	var glow := PointLight2D.new()
+	glow.energy = 0.8
+	glow.texture = _create_light_texture()
+	glow.texture_scale = 3.0
+	glow.position = Vector2(0.0, -40.0)  # center on body
+	# P1 = warm orange/pink, P2 = cool cyan/blue.
+	if player_id == 1:
+		glow.color = Color(1.0, 0.5, 0.3, 1.0)  # warm orange
+	else:
+		glow.color = Color(0.3, 0.7, 1.0, 1.0)  # cool cyan
+	add_child(glow)
 
 
 func _physics_process(delta: float) -> void:
@@ -234,10 +272,10 @@ func _physics_process(delta: float) -> void:
 					pass
 
 		# Apply jump height as visual offset on the sprite (negative = up).
-		animated_sprite.offset.y = (-FRAME_SIZE / 2.0) + _jump_height
+		animated_sprite.offset.y = (-_frame_size / 2.0 + _feet_padding) + _jump_height
 	else:
 		# On ground — restore normal offset.
-		animated_sprite.offset.y = -FRAME_SIZE / 2.0
+		animated_sprite.offset.y = -_frame_size / 2.0 + _feet_padding
 
 	# Run state-specific update.
 	_update_state(delta)
@@ -295,12 +333,26 @@ func _enter_state(state: State) -> void:
 			hitbox.damage = 15
 			hitbox.activate()
 			_play_anim("attack_2")
+			_show_combo_indicator()
 		State.ATTACK_3:
 			_combo_count = 3
 			_combo_timer = COMBO_WINDOW
 			hitbox.damage = 25
 			hitbox.activate()
 			_play_anim("attack_3")
+			_show_combo_indicator()
+	# Combo color glow — tint the sprite to show combo progress.
+	if state in [State.ATTACK_1, State.ATTACK_2, State.ATTACK_3]:
+		match _combo_count:
+			1:
+				animated_sprite.modulate = Color.WHITE
+			2:
+				animated_sprite.modulate = Color(0.7, 0.9, 1.0, 1.0)  # slight cyan tint
+				ScreenFX.shake(0.08, 2.0)  # small shake on combo 2
+			3:
+				animated_sprite.modulate = Color(1.0, 0.9, 0.4, 1.0)  # gold tint
+				ScreenFX.shake(0.12, 4.0)  # bigger shake on combo 3
+	match state:
 		State.DODGE:
 			_is_dodging = true
 			_dodge_timer = DODGE_DURATION
@@ -402,7 +454,7 @@ func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 			if next_state not in [State.ATTACK_1, State.ATTACK_2, State.ATTACK_3, State.HURT, State.KNOCKDOWN, State.DEAD]:
 				_jump_height = 0.0
 				_is_jumping = false
-				animated_sprite.offset.y = -FRAME_SIZE / 2.0
+				animated_sprite.offset.y = -_frame_size / 2.0 + _feet_padding
 		State.ATTACK_1, State.ATTACK_2, State.ATTACK_3, State.SPECIAL:
 			hitbox.deactivate()
 			# Restore default hitbox size after any attack or special.
@@ -412,6 +464,8 @@ func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 				hitbox_shape_exit.position = _default_hitbox_pos
 			if _combo_timer <= 0.0:
 				_combo_count = 0
+			# Clear combo tint when leaving an attack state.
+			animated_sprite.modulate = Color.WHITE
 			# If airborne and transitioning to a non-aerial, non-damage state,
 			# land immediately.  Damage states let the arc continue so the hit
 			# reaction plays at height before the player falls to the ground.
@@ -419,7 +473,7 @@ func _exit_state(state: State, next_state: State = State.IDLE) -> void:
 				_is_jumping = false
 				_jump_height = 0.0
 				_jump_velocity = 0.0
-				animated_sprite.offset.y = -FRAME_SIZE / 2.0
+				animated_sprite.offset.y = -_frame_size / 2.0 + _feet_padding
 
 
 func _update_state(delta: float) -> void:
@@ -714,6 +768,8 @@ func _on_attack_finished(next_combo_state: State) -> void:
 func _on_attack_chain_end() -> void:
 	_buffered_input = &""
 	_buffer_timer = 0.0
+	# Clear combo tint.
+	animated_sprite.modulate = Color.WHITE
 
 	# If still in the air, go back to jump state.
 	if _is_jumping:
@@ -768,6 +824,20 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	if attacker and is_instance_valid(attacker):
 		_hit_entities.append(attacker)
 	HitStop.freeze(0.05, _hit_entities)
+	# Screen shake on player hit.
+	ScreenFX.shake(0.15, 4.0)
+	# Hit flash.
+	if animated_sprite.material is ShaderMaterial:
+		var mat: ShaderMaterial = animated_sprite.material as ShaderMaterial
+		mat.set_shader_parameter("flash_amount", 1.0)
+		var flash_tween: Tween = create_tween()
+		flash_tween.tween_method(func(val: float) -> void:
+			mat.set_shader_parameter("flash_amount", val)
+		, 1.0, 0.0, 0.1)
+	# Hit spark.
+	if attacker and is_instance_valid(attacker):
+		var attacker_2d := attacker as Node2D
+		_spawn_hit_spark(attacker_2d.global_position if attacker_2d else global_position)
 	if health.is_dead():
 		_change_state(State.DEAD)
 	elif _state == State.KNOCKDOWN:
@@ -780,6 +850,84 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 func _on_damage_dealt(amount: int, _target: Node) -> void:
 	if _special_meter and _state != State.SPECIAL:
 		_special_meter.add_points_from_damage_dealt(amount)
+
+
+## Spawn a procedural hit spark at the impact point between self and the attacker.
+func _spawn_hit_spark(attacker_pos: Vector2) -> void:
+	var spark := GPUParticles2D.new()
+	spark.emitting = true
+	spark.one_shot = true
+	spark.amount = 12
+	spark.lifetime = 0.25
+	spark.explosiveness = 1.0
+	spark.z_index = 10
+	spark.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+	# Position at hit point (between self and attacker, offset up to body center).
+	var dir_to_attacker: Vector2 = (attacker_pos - global_position).normalized()
+	spark.global_position = global_position + dir_to_attacker * 15.0
+	spark.position.y -= 30.0
+
+	# Glow blend mode.
+	var canvas_mat := CanvasItemMaterial.new()
+	canvas_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	spark.material = canvas_mat
+
+	# Crisp 2x2 pixel dot for pixel-art style sparks.
+	var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	var tex := ImageTexture.create_from_image(img)
+	spark.texture = tex
+
+	# Particle behavior.
+	var mat := ParticleProcessMaterial.new()
+	mat.direction = Vector3((global_position.x - attacker_pos.x), -0.5, 0.0).normalized()
+	mat.spread = 50.0
+	mat.initial_velocity_min = 100.0
+	mat.initial_velocity_max = 200.0
+	mat.gravity = Vector3(0, 300, 0)
+	mat.damping_min = 3.0
+	mat.damping_max = 6.0
+	mat.scale_min = 1.0
+	mat.scale_max = 3.0
+
+	# Color: bright yellow/white → orange → fade out.
+	var color_ramp := Gradient.new()
+	color_ramp.set_color(0, Color(1.0, 1.0, 0.8, 1.0))  # bright white-yellow
+	color_ramp.add_point(0.3, Color(1.0, 0.7, 0.2, 1.0))  # orange
+	color_ramp.add_point(0.7, Color(1.0, 0.3, 0.1, 0.6))  # dark orange, fading
+	color_ramp.set_color(1, Color(0.8, 0.1, 0.0, 0.0))   # red, transparent
+	var color_tex := GradientTexture1D.new()
+	color_tex.gradient = color_ramp
+	mat.color_ramp = color_tex
+
+	spark.process_material = mat
+
+	# Add to scene root so it survives potential entity removal.
+	get_tree().current_scene.add_child(spark)
+	var timer: SceneTreeTimer = get_tree().create_timer(0.5)
+	timer.timeout.connect(spark.queue_free)
+
+
+func _show_combo_indicator() -> void:
+	if _combo_count < 2:
+		return
+	var label := Label.new()
+	label.text = "x%d!" % _combo_count
+	label.add_theme_font_size_override("font_size", 16)
+	label.add_theme_color_override("font_color", Color.GOLD if _combo_count >= 3 else Color.WHITE)
+	label.add_theme_color_override("font_shadow_color", Color.BLACK)
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.z_index = 20
+	label.position = Vector2(-10, -_frame_size * 0.6)
+	add_child(label)
+	# Float up and fade out.
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(label, "position:y", label.position.y - 30.0, 0.6)
+	tween.tween_property(label, "modulate:a", 0.0, 0.6)
+	tween.chain().tween_callback(label.queue_free)
 
 
 func is_dead() -> bool:
@@ -819,6 +967,21 @@ func _determine_special_tier() -> int:
 	return 1
 
 
+## Build a procedural radial gradient ImageTexture for use as a PointLight2D
+## texture. Produces a soft circular falloff with quadratic rolloff.
+func _create_light_texture() -> ImageTexture:
+	var size: int = 64
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center := Vector2(float(size) / 2.0, float(size) / 2.0)
+	for y_px: int in range(size):
+		for x_px: int in range(size):
+			var dist: float = Vector2(float(x_px), float(y_px)).distance_to(center) / (float(size) / 2.0)
+			var intensity: float = clampf(1.0 - dist, 0.0, 1.0)
+			intensity = intensity * intensity  # quadratic falloff
+			img.set_pixel(x_px, y_px, Color(intensity, intensity, intensity, 1.0))
+	return ImageTexture.create_from_image(img)
+
+
 ## Play an animation with a has_animation guard.
 func _play_anim(anim_name: String) -> void:
 	if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation(anim_name):
@@ -855,7 +1018,7 @@ func _setup_debug_label() -> void:
 	_debug_label.add_theme_color_override("font_color", Color.YELLOW)
 	_debug_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_debug_label.add_theme_constant_override("outline_size", 2)
-	_debug_label.position = Vector2(-30, -FRAME_SIZE - 12)
+	_debug_label.position = Vector2(-30, -_frame_size - 12)
 	_debug_label.visible = false
 	add_child(_debug_label)
 
@@ -866,7 +1029,7 @@ func _setup_tier_label() -> void:
 	_tier_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_tier_label.add_theme_constant_override("outline_size", 2)
 	_tier_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_tier_label.position = Vector2(-16, -FRAME_SIZE - 24)
+	_tier_label.position = Vector2(-16, -_frame_size - 24)
 	_tier_label.visible = false
 	add_child(_tier_label)
 
@@ -960,7 +1123,8 @@ func _load_sprite_frames(folder_path: String) -> SpriteFrames:
 			continue
 
 		var texture: Texture2D = load(path)
-		var frame_count: int = int(texture.get_width() / float(FRAME_SIZE))
+		_frame_size = texture.get_height()
+		var frame_count: int = int(texture.get_width() / float(_frame_size))
 
 		frames.add_animation(anim_name)
 
@@ -974,7 +1138,7 @@ func _load_sprite_frames(folder_path: String) -> SpriteFrames:
 		for i in range(frame_count):
 			var atlas := AtlasTexture.new()
 			atlas.atlas = texture
-			atlas.region = Rect2(i * FRAME_SIZE, 0, FRAME_SIZE, FRAME_SIZE)
+			atlas.region = Rect2(i * _frame_size, 0, _frame_size, _frame_size)
 			frames.add_frame(anim_name, atlas)
 
 	return frames

@@ -1,22 +1,24 @@
-[gd_scene load_steps=5 format=3 uid="uid://b1a2b3c4d5e6f"]
+[gd_scene load_steps=6 format=3 uid="uid://b1a2b3c4d5e6f"]
 
 [ext_resource type="PackedScene" uid="uid://cp1ay3rsc3n3" path="res://scenes/player/player.tscn" id="1_player_scene"]
 [ext_resource type="PackedScene" uid="uid://egrunt00001" path="res://scenes/enemies/enemy_grunt.tscn" id="2_enemy_grunt"]
 [ext_resource type="Script" path="res://scripts/managers/wave_manager.gd" id="3_wave_manager"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="4_hud"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="5_main"]
 
 [node name="Main" type="Node"]
+script = ExtResource("5_main")
 
 [node name="Background" type="ColorRect" parent="."]
 offset_right = 640.0
 offset_bottom = 360.0
-color = Color(0.18, 0.22, 0.16, 1)
+color = Color(0.05, 0.03, 0.1, 1)
 
 [node name="FloorBelt" type="ColorRect" parent="."]
-offset_top = 115.0
+offset_top = 160.0
 offset_right = 640.0
-offset_bottom = 235.0
-color = Color(0.28, 0.32, 0.24, 1)
+offset_bottom = 340.0
+color = Color(0.1, 0.07, 0.18, 1)
 
 [node name="Game" type="Node2D" parent="."]
 

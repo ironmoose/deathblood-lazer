@@ -22,8 +22,8 @@ enum State { IDLE, APPROACH, ATTACK, STAGGER, DEATH }
 @export var sprite_folder: String = "res://assets/sprites/enemies/Craftpix_Orc/Orc_Warrior/"
 
 const FRAME_SIZE: int = 96
-const BELT_MIN_Y: float = 115.0
-const BELT_MAX_Y: float = 235.0
+const BELT_MIN_Y: float = 160.0
+const BELT_MAX_Y: float = 340.0
 
 ## Vertical speed multiplier for depth feel (same as player).
 const VERTICAL_SPEED_FACTOR: float = 0.7
@@ -76,6 +76,13 @@ var _target: Node2D = null
 var _retarget_timer: float = 0.0
 var _last_attacker: Node = null
 
+## Launch physics for combo finisher.
+var _launch_height: float = 0.0
+var _launch_velocity: float = 0.0
+var _is_launched: bool = false
+var _launch_h_velocity: float = 0.0
+const LAUNCH_GRAVITY: float = 600.0
+
 ## Debug overlay.
 var _debug_label: Label = null
 
@@ -101,11 +108,34 @@ func _ready() -> void:
 	health.initialize(max_hp)
 	_change_state(State.IDLE)
 
+	# Apply hit flash shader material.
+	var shader_mat := ShaderMaterial.new()
+	shader_mat.shader = load("res://shaders/hit_flash.gdshader")
+	animated_sprite.material = shader_mat
+
 
 func _physics_process(delta: float) -> void:
 	# Cooldown countdown.
 	if _cooldown_timer > 0.0:
 		_cooldown_timer -= delta
+
+	# Launch arc physics.
+	if _is_launched:
+		_launch_velocity += LAUNCH_GRAVITY * delta
+		_launch_height += _launch_velocity * delta
+		# Horizontal movement during launch.
+		velocity = Vector2(_launch_h_velocity, 0.0)
+		move_and_slide()
+		_launch_h_velocity *= 0.95  # air drag
+		if _launch_height >= 0.0 and _launch_velocity > 0.0:
+			# Landed.
+			_launch_height = 0.0
+			_is_launched = false
+			_launch_h_velocity = 0.0
+			velocity = Vector2.ZERO
+			animated_sprite.offset.y = -FRAME_SIZE / 2.0
+		else:
+			animated_sprite.offset.y = (-FRAME_SIZE / 2.0) + _launch_height
 
 	_update_state(delta)
 
@@ -286,6 +316,8 @@ func _update_stagger(delta: float) -> void:
 	velocity = velocity.lerp(Vector2.ZERO, 0.15)
 	move_and_slide()
 
+	if _is_launched:
+		return  # Don't recover while airborne.
 	if _state_timer <= 0.0:
 		if health.is_dead():
 			_change_state(State.DEATH)
@@ -327,12 +359,37 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	if attacker and is_instance_valid(attacker):
 		var attacker_2d := attacker as Node2D
 		if attacker_2d:
-			var dir: float = sign(global_position.x - attacker_2d.global_position.x)
+			var dir: float = signf(global_position.x - attacker_2d.global_position.x)
 			velocity = Vector2(dir * knockback, 0.0)
 	var _hit_entities: Array[Node] = [self]
 	if attacker and is_instance_valid(attacker):
 		_hit_entities.append(attacker)
 	HitStop.freeze(0.05, _hit_entities)
+	# Screen shake on enemy hit.
+	ScreenFX.shake(0.1, 3.0)
+	# Launch on heavy combo finisher (Attack_3 does 25+ damage).
+	if amount >= 25:
+		_is_launched = true
+		_launch_velocity = -350.0
+		_launch_height = 0.0
+		# Horizontal knockback away from attacker.
+		if attacker and is_instance_valid(attacker):
+			var attacker_2d := attacker as Node2D
+			if attacker_2d:
+				_launch_h_velocity = signf(global_position.x - attacker_2d.global_position.x) * 200.0
+		ScreenFX.shake(0.25, 8.0)
+	# Hit flash.
+	if animated_sprite.material is ShaderMaterial:
+		var mat: ShaderMaterial = animated_sprite.material as ShaderMaterial
+		mat.set_shader_parameter("flash_amount", 1.0)
+		var flash_tween: Tween = create_tween()
+		flash_tween.tween_method(func(val: float) -> void:
+			mat.set_shader_parameter("flash_amount", val)
+		, 1.0, 0.0, 0.1)
+	# Hit spark.
+	if attacker and is_instance_valid(attacker):
+		var attacker_2d := attacker as Node2D
+		_spawn_hit_spark(attacker_2d.global_position if attacker_2d else global_position)
 	if health.is_dead():
 		_change_state(State.DEATH)
 	else:
@@ -376,6 +433,63 @@ func _find_nearest_player() -> Node2D:
 
 func _get_direction_to_target(target: Node2D) -> Vector2:
 	return (target.global_position - global_position).normalized()
+
+
+## Spawn a procedural hit spark at the impact point between self and the attacker.
+func _spawn_hit_spark(attacker_pos: Vector2) -> void:
+	var spark := GPUParticles2D.new()
+	spark.emitting = true
+	spark.one_shot = true
+	spark.amount = 12
+	spark.lifetime = 0.25
+	spark.explosiveness = 1.0
+	spark.z_index = 10
+	spark.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+	# Position at hit point (between self and attacker, offset up to body center).
+	var dir_to_attacker: Vector2 = (attacker_pos - global_position).normalized()
+	spark.global_position = global_position + dir_to_attacker * 15.0
+	spark.position.y -= 30.0
+
+	# Glow blend mode.
+	var canvas_mat := CanvasItemMaterial.new()
+	canvas_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	spark.material = canvas_mat
+
+	# Crisp 2x2 pixel dot for pixel-art style sparks.
+	var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	var tex := ImageTexture.create_from_image(img)
+	spark.texture = tex
+
+	# Particle behavior.
+	var mat := ParticleProcessMaterial.new()
+	mat.direction = Vector3((global_position.x - attacker_pos.x), -0.5, 0.0).normalized()
+	mat.spread = 50.0
+	mat.initial_velocity_min = 100.0
+	mat.initial_velocity_max = 200.0
+	mat.gravity = Vector3(0, 300, 0)
+	mat.damping_min = 3.0
+	mat.damping_max = 6.0
+	mat.scale_min = 1.0
+	mat.scale_max = 3.0
+
+	# Color: bright yellow/white → orange → fade out.
+	var color_ramp := Gradient.new()
+	color_ramp.set_color(0, Color(1.0, 1.0, 0.8, 1.0))  # bright white-yellow
+	color_ramp.add_point(0.3, Color(1.0, 0.7, 0.2, 1.0))  # orange
+	color_ramp.add_point(0.7, Color(1.0, 0.3, 0.1, 0.6))  # dark orange, fading
+	color_ramp.set_color(1, Color(0.8, 0.1, 0.0, 0.0))   # red, transparent
+	var color_tex := GradientTexture1D.new()
+	color_tex.gradient = color_ramp
+	mat.color_ramp = color_tex
+
+	spark.process_material = mat
+
+	# Add to scene root so it survives potential entity removal.
+	get_tree().current_scene.add_child(spark)
+	var timer: SceneTreeTimer = get_tree().create_timer(0.5)
+	timer.timeout.connect(spark.queue_free)
 
 
 func _is_in_attack_range(target: Node2D) -> bool:
