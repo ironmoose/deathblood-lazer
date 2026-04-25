@@ -6,6 +6,12 @@ The art direction is synthwave fantasy. Think neon-lit dungeons, skull motifs, t
 
 **Status: work in progress / prototype**
 
+## License
+
+Source code is **MIT licensed** (see `LICENSE`). Art, audio, and character designs are **All Rights Reserved**. See `NOTICE.md` for details.
+
+This is an independent hobby project. Golden Axe, Huntdown, Streets of Rage, and other titles referenced are inspirations, not affiliations.
+
 ## Characters
 
 - **Player 1** - Father Stu, a stout dwarf cleric (orange theme)
