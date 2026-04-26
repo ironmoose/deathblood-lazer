@@ -11,8 +11,15 @@ assets/sprites/  — character sprites, enemies, effects, environment
 data/weapons/    — .tres weapon resources
 tools/           — sprite_pipeline.py, skeleton_editor.html
 docs/            — research notes
-shaders/         — custom shaders (placeholder)
+shaders/         — custom shaders (hit_flash.gdshader)
 ```
+
+## Licensing
+
+- Source code (GDScript, Python, shell, config): MIT License, see `LICENSE`
+- Art, audio, character designs, and other creative content: All Rights Reserved
+- Character sprites are AI-generated via PixelLab under an active subscription
+- See `NOTICE.md` for full asset licensing, AI-content disclosure, and fan inspiration disclaimer
 
 ## Engine Settings
 
