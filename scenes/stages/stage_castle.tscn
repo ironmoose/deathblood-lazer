@@ -1,0 +1,50 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/environment/painterly/sky.png" id="1_sky"]
+[ext_resource type="Texture2D" path="res://assets/sprites/environment/painterly/far_castle.png" id="2_fc"]
+[ext_resource type="Texture2D" path="res://assets/sprites/environment/painterly/mid.png" id="3_mid"]
+[ext_resource type="Texture2D" path="res://assets/sprites/environment/painterly/near_fg.png" id="4_nfg"]
+
+[node name="Stage" type="Node2D"]
+
+[node name="ParallaxBG" type="ParallaxBackground" parent="."]
+
+[node name="SkyLayer" type="ParallaxLayer" parent="ParallaxBG"]
+motion_scale = Vector2(0.05, 0.0)
+motion_mirroring = Vector2(2560, 0)
+
+[node name="SkySprite" type="Sprite2D" parent="ParallaxBG/SkyLayer"]
+texture_filter = 2
+position = Vector2(0, 0)
+centered = false
+texture = ExtResource("1_sky")
+
+[node name="FarCastleLayer" type="ParallaxLayer" parent="ParallaxBG"]
+motion_scale = Vector2(0.15, 0.0)
+motion_mirroring = Vector2(2560, 0)
+
+[node name="FarCastleSprite" type="Sprite2D" parent="ParallaxBG/FarCastleLayer"]
+texture_filter = 2
+position = Vector2(0, 544)
+centered = false
+texture = ExtResource("2_fc")
+
+[node name="MidLayer" type="ParallaxLayer" parent="ParallaxBG"]
+motion_scale = Vector2(0.35, 0.0)
+motion_mirroring = Vector2(2560, 0)
+
+[node name="MidSprite" type="Sprite2D" parent="ParallaxBG/MidLayer"]
+texture_filter = 2
+position = Vector2(0, 800)
+centered = false
+texture = ExtResource("3_mid")
+
+[node name="NearFGLayer" type="ParallaxLayer" parent="ParallaxBG"]
+motion_scale = Vector2(0.6, 0.0)
+motion_mirroring = Vector2(2560, 0)
+
+[node name="NearFGSprite" type="Sprite2D" parent="ParallaxBG/NearFGLayer"]
+texture_filter = 2
+position = Vector2(0, 1000)
+centered = false
+texture = ExtResource("4_nfg")
