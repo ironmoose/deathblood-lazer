@@ -1,6 +1,6 @@
 # Deathblood Lazer — Godot Beat 'em Up
 
-Golden Axe-style 2P co-op side-scrolling brawler. Godot 4.6, GDScript, pixel art.
+Golden Axe-style 2P co-op side-scrolling brawler. Godot 4.6, GDScript, painterly 2D.
 
 ## Project Structure
 
@@ -23,8 +23,8 @@ shaders/         — custom shaders (hit_flash.gdshader)
 
 ## Engine Settings
 
-- Viewport: 640x360, window 1920x1080 (3x pixel-perfect upscale)
-- Stretch mode: canvas_items
+- Viewport: 2560x1440 native painterly render (no pixelization)
+- Stretch mode: canvas_items, keep aspect
 - Main scene: res://scenes/main.tscn
 
 ## Autoloads (Singletons)
@@ -49,7 +49,7 @@ All inputs are prefixed `p1_` / `p2_`. Movement: WASD or joypad analog. Combat: 
 - **State machines**: Player has 13 enum states, Enemy has 5. Both use `_change_state()` with timer-based transitions.
 - **Component pattern**: HealthComponent, SpecialMeter, Hitbox, Hurtbox are child nodes attached to entities.
 - **Signal-driven**: HealthComponent emits `health_changed`/`died`, Hurtbox emits `damage_received`, Hitbox emits `damage_dealt`.
-- **Dynamic sprite loading**: `_load_sprite_frames()` reads PNGs from a folder at runtime, slices into AtlasTextures (96x96 frames).
+- **Dynamic sprite loading**: `_load_sprite_frames()` reads PNGs from a folder at runtime, slices into AtlasTextures (96x96 frames). (pixel-art pipeline pattern; will be replaced when bone-rig pipeline lands)
 
 ## Combat System
 
@@ -72,11 +72,12 @@ WeaponData .tres resources define per-tier stats (damage, heal, duration, effect
 
 ## Art Pipeline
 
-- Characters: PixelLab Character Creator (text-to-character, 8 rotations)
-- Animations: Hybrid — PixelLab web editor (Pixelorama) for movement, skeleton API for combat
-- Static sprites: Wiley v8 (256x256), Father Stu v11 (228x228)
-- Character IDs: Wiley=d1babc2c-390f-4620-96af-899a95a227ba, Stu=9a05b9af-fa16-4a7a-b603-c55d5249774e
-- Tools: tools/sprite_pipeline.py (skeleton API), tools/skeleton_editor.html (visual keypoint editor)
+- Render target: 2560x1440 native, characters ~400-800 px tall painterly assets
+- Generation: local ComfyUI (4070 Ti Super) with dbstyle_v4 / dbpainterly Style LoRAs + per-character LoRAs (wiley_character_v1, stu_character_v1)
+- Rigging: Spine or DragonBones bone-rigged 2D (NOT frame-by-frame sprite sheets)
+- Style refs: Hollow Knight, Cuphead, Cult of the Lamb, Darkest Dungeon, Skul: The Hero Slayer
+- Painterly canonicals locked at `~/workspaces/deathblood-lazer-training/canonical/locked/`
+- PixelLab pipeline (96x96 frames, PixelLab character IDs, skeleton API): SUPERSEDED 2026-05-19
 
 ## Co-op
 
