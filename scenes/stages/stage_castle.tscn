@@ -25,7 +25,7 @@ motion_mirroring = Vector2(2560, 0)
 
 [node name="FarCastleSprite" type="Sprite2D" parent="ParallaxBG/FarCastleLayer"]
 texture_filter = 2
-position = Vector2(0, 544)
+position = Vector2(0, 416)
 centered = false
 texture = ExtResource("2_fc")
 
