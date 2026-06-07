@@ -1,31 +1,11 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=2 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/sprites/environment/painterly/backdrop.png" id="1_backdrop"]
-[ext_resource type="Texture2D" path="res://assets/sprites/environment/painterly/floor_tile.png" id="2_floor_tile"]
+[ext_resource type="Texture2D" path="res://assets/sprites/environment/painterly/stage_castle.png" id="1_stage_castle"]
 
 [node name="Stage" type="Node2D"]
 
-[node name="ParallaxBG" type="ParallaxBackground" parent="."]
-
-[node name="BackdropLayer" type="ParallaxLayer" parent="ParallaxBG"]
-motion_scale = Vector2(0.05, 0.0)
-motion_mirroring = Vector2(2560, 0)
-
-[node name="BackdropSprite" type="Sprite2D" parent="ParallaxBG/BackdropLayer"]
+[node name="BackdropSprite" type="Sprite2D" parent="."]
 texture_filter = 2
 position = Vector2(0, 0)
 centered = false
-texture = ExtResource("1_backdrop")
-
-[node name="FloorLayer" type="ParallaxLayer" parent="ParallaxBG"]
-motion_scale = Vector2(0.6, 0.0)
-motion_mirroring = Vector2(2560, 0)
-
-[node name="FloorSprite" type="Sprite2D" parent="ParallaxBG/FloorLayer"]
-texture_filter = 2
-texture_repeat = 2
-position = Vector2(0, 720)
-centered = false
-region_enabled = true
-region_rect = Rect2(0, 0, 2560, 720)
-texture = ExtResource("2_floor_tile")
+texture = ExtResource("1_stage_castle")
