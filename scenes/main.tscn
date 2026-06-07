@@ -19,21 +19,21 @@ position = Vector2(0, 0)
 y_sort_enabled = true
 
 [node name="Player1" parent="Game/Entities" instance=ExtResource("1_player_scene")]
-position = Vector2(640, 680)
+position = Vector2(640, 1100)
 player_id = 1
 
 [node name="Player2" parent="Game/Entities" instance=ExtResource("1_player_scene")]
-position = Vector2(1040, 680)
+position = Vector2(1040, 1100)
 player_id = 2
 
 [node name="EnemyGrunt1" parent="Game/Entities" instance=ExtResource("2_enemy_grunt")]
-position = Vector2(1680, 620)
+position = Vector2(1680, 1050)
 
 [node name="EnemyGrunt2" parent="Game/Entities" instance=ExtResource("2_enemy_grunt")]
-position = Vector2(1920, 720)
+position = Vector2(1920, 1100)
 
 [node name="EnemyGrunt3" parent="Game/Entities" instance=ExtResource("2_enemy_grunt")]
-position = Vector2(2160, 800)
+position = Vector2(2160, 1150)
 
 [node name="WaveManager" type="Node" parent="."]
 script = ExtResource("3_wave_manager")

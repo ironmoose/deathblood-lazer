@@ -22,8 +22,8 @@ enum State { IDLE, APPROACH, ATTACK, STAGGER, DEATH }
 @export var sprite_folder: String = "res://assets/sprites/enemies/Craftpix_Orc/Orc_Warrior/"
 
 const FRAME_SIZE: int = 96
-const BELT_MIN_Y: float = 640.0
-const BELT_MAX_Y: float = 1360.0
+const BELT_MIN_Y: float = 900.0
+const BELT_MAX_Y: float = 1380.0
 
 ## Vertical speed multiplier for depth feel (same as player).
 const VERTICAL_SPEED_FACTOR: float = 0.7

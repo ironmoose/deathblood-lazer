@@ -17,10 +17,10 @@ extends CharacterBody2D
 @export var move_speed: float = 800.0
 
 ## Top edge of the playable belt (Y coordinate).
-@export var belt_min_y: float = 640.0
+@export var belt_min_y: float = 900.0
 
 ## Bottom edge of the playable belt (Y coordinate).
-@export var belt_max_y: float = 1360.0
+@export var belt_max_y: float = 1380.0
 
 ## Vertical speed multiplier to give a depth / perspective feel.
 const VERTICAL_SPEED_FACTOR: float = 0.7
