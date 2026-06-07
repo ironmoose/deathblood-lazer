@@ -1,16 +1,13 @@
 ## Main scene controller.
 ##
-## Handles synthwave atmosphere setup: dark ambient modulate and background
-## color are applied here so they can be adjusted in code without needing
-## separate scene resources.
+## Handles synthwave atmosphere setup: dark ambient modulate is applied here
+## so it can be adjusted in code without needing separate scene resources.
 ##
-## Also builds the full parallax background (sky, castle, neon underglow,
-## floor) and ground fog particles in _ready() so the .tscn stays minimal.
-## The underglow ColorRect color-cycles in _process() for a neon pulse effect.
+## Builds a minimal parallax background (sky only) and a subtle ground fog
+## particle effect in _ready() so the .tscn stays minimal. No castle, no
+## floor sprite, no underglow; the simplest backdrop possible to keep the
+## playfield readable.
 extends Node
-
-var _underglow: ColorRect = null
-var _glow_time: float = 0.0
 
 func _ready() -> void:
 	# Hide placeholder ColorRect backgrounds.
@@ -44,48 +41,10 @@ func _ready() -> void:
 	sky_layer.add_child(sky_sprite)
 	parallax_bg.add_child(sky_layer)
 
-	# --- Layer 2: Castle walls (mid scroll, transparent arches show sky) ---
-	var castle_layer := ParallaxLayer.new()
-	castle_layer.motion_scale = Vector2(0.2, 0.0)
-	castle_layer.motion_mirroring = Vector2(440, 0)
-	var castle_sprite := Sprite2D.new()
-	castle_sprite.texture = load("res://assets/sprites/environment/castle_panorama.png")
-	castle_sprite.centered = false
-	castle_sprite.position = Vector2(0, 0)
-	castle_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	castle_layer.add_child(castle_sprite)
-	parallax_bg.add_child(castle_layer)
-
-	# --- Layer 3: Neon underglow (behind floor, visible through cracks) ---
-	var glow_layer := ParallaxLayer.new()
-	glow_layer.motion_scale = Vector2(0.4, 0.0)
-	var glow_rect := ColorRect.new()
-	glow_rect.color = Color(0.0, 0.8, 0.9, 0.9)
-	glow_rect.size = Vector2(1280, 192)
-	glow_rect.position = Vector2(-320, 168)
-	var glow_mat := CanvasItemMaterial.new()
-	glow_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	glow_rect.material = glow_mat
-	glow_layer.add_child(glow_rect)
-	parallax_bg.add_child(glow_layer)
-	_underglow = glow_rect
-
-	# --- Layer 4: Floor (stone with transparent cracks, near scroll) ---
-	var floor_layer := ParallaxLayer.new()
-	floor_layer.motion_scale = Vector2(0.4, 0.0)
-	floor_layer.motion_mirroring = Vector2(640, 0)
-	var floor_sprite := Sprite2D.new()
-	floor_sprite.texture = load("res://assets/sprites/environment/floor_base.png")
-	floor_sprite.centered = false
-	floor_sprite.position = Vector2(0, 168)
-	floor_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	floor_layer.add_child(floor_sprite)
-	parallax_bg.add_child(floor_layer)
-
-	# --- Ground Fog (rising from cracks) ---
+	# --- Ground Fog (subtle atmospheric mist) ---
 	var fog := GPUParticles2D.new()
 	fog.name = "GroundFog"
-	fog.amount = 40
+	fog.amount = 10
 	fog.lifetime = 3.0
 	fog.preprocess = 3.0
 	fog.z_index = 5
@@ -116,8 +75,8 @@ func _ready() -> void:
 
 	var fog_color := Gradient.new()
 	fog_color.set_color(0, Color(0.3, 0.9, 0.8, 0.0))
-	fog_color.add_point(0.2, Color(0.3, 0.8, 0.9, 0.25))
-	fog_color.add_point(0.6, Color(0.7, 0.2, 0.9, 0.2))
+	fog_color.add_point(0.2, Color(0.3, 0.8, 0.9, 0.10))
+	fog_color.add_point(0.6, Color(0.7, 0.2, 0.9, 0.08))
 	fog_color.set_color(1, Color(0.5, 0.1, 0.8, 0.0))
 	var fog_color_tex := GradientTexture1D.new()
 	fog_color_tex.gradient = fog_color
@@ -128,22 +87,3 @@ func _ready() -> void:
 	fog_canvas_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	fog.material = fog_canvas_mat
 	add_child(fog)
-
-
-func _process(delta: float) -> void:
-	if not _underglow:
-		return
-	_glow_time += delta * 0.4
-	var t: float = fmod(_glow_time, 3.0) / 3.0
-	var color: Color
-	if t < 0.333:
-		var blend: float = t / 0.333
-		color = Color(0.0, 0.8, 0.9).lerp(Color(0.9, 0.0, 0.7), blend)
-	elif t < 0.666:
-		var blend: float = (t - 0.333) / 0.333
-		color = Color(0.9, 0.0, 0.7).lerp(Color(0.0, 0.9, 0.2), blend)
-	else:
-		var blend: float = (t - 0.666) / 0.334
-		color = Color(0.0, 0.9, 0.2).lerp(Color(0.0, 0.8, 0.9), blend)
-	color.a = 0.8
-	_underglow.color = color
