@@ -14,13 +14,13 @@ extends CharacterBody2D
 @export var player_id: int = 1
 
 ## Horizontal / vertical base movement speed in pixels per second.
-@export var move_speed: float = 200.0
+@export var move_speed: float = 800.0
 
 ## Top edge of the playable belt (Y coordinate).
-@export var belt_min_y: float = 160.0
+@export var belt_min_y: float = 640.0
 
 ## Bottom edge of the playable belt (Y coordinate).
-@export var belt_max_y: float = 340.0
+@export var belt_max_y: float = 1360.0
 
 ## Vertical speed multiplier to give a depth / perspective feel.
 const VERTICAL_SPEED_FACTOR: float = 0.7
@@ -38,8 +38,8 @@ const SPRITE_PATHS: Dictionary = {
 ## Target visual height in pixels per player. Stu is a stout dwarf (smaller),
 ## Wiley is a towering wolf-dragon berserker (bigger than standard enemies).
 const SPRITE_TARGET_SIZE: Dictionary = {
-	1: 80.0,   # Father Stu — dwarf, shorter than orcs (96px)
-	2: 120.0,  # Wiley — berserker, taller than orcs
+	1: 320.0,   # Father Stu, dwarf, shorter than orcs (384px)
+	2: 480.0,   # Wiley, berserker, taller than orcs
 }
 
 ## Transparent padding below feet in the source sprite (pixels, unscaled).
@@ -76,12 +76,12 @@ const ATTACK_ANIM_FPS: float = 20.0
 const COMBO_WINDOW: float = 0.5  # seconds to chain next hit
 
 ## Dodge constants.
-const DODGE_SPEED: float = 300.0
+const DODGE_SPEED: float = 1200.0
 const DODGE_DURATION: float = 0.2
 
 ## Jump arc constants.
-const JUMP_FORCE: float = 200.0  # initial upward velocity
-const GRAVITY: float = 600.0     # pulls back down
+const JUMP_FORCE: float = 800.0  # initial upward velocity
+const GRAVITY: float = 2400.0    # pulls back down
 
 ## Input buffer window.
 const INPUT_BUFFER_TIME: float = 0.15  # 150ms buffer window
@@ -169,8 +169,8 @@ var _debug_label: Label = null
 var _tier_label: Label = null
 
 ## Cached default hitbox collision shape size and position for restoration after specials.
-var _default_hitbox_size: Vector2 = Vector2(18.0, 20.0)
-var _default_hitbox_pos: Vector2 = Vector2(22.0, -26.0)
+var _default_hitbox_size: Vector2 = Vector2(72.0, 80.0)
+var _default_hitbox_pos: Vector2 = Vector2(88.0, -104.0)
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var shadow: Sprite2D = $Shadow
@@ -231,7 +231,7 @@ func _ready() -> void:
 	glow.energy = 0.8
 	glow.texture = _create_light_texture()
 	glow.texture_scale = 3.0
-	glow.position = Vector2(0.0, -40.0)  # center on body
+	glow.position = Vector2(0.0, -160.0)  # center on body
 	# P1 = warm orange/pink, P2 = cool cyan/blue.
 	if player_id == 1:
 		glow.color = Color(1.0, 0.5, 0.3, 1.0)  # warm orange
@@ -399,23 +399,23 @@ func _enter_state(state: State) -> void:
 						rect.size = _default_hitbox_size
 						hitbox_shape.position = _default_hitbox_pos
 					2:
-						rect.size = Vector2(60.0, 50.0)
-						hitbox_shape.position = Vector2(0.0, -26.0)
+						rect.size = Vector2(240.0, 200.0)
+						hitbox_shape.position = Vector2(0.0, -104.0)
 					3:
-						rect.size = Vector2(200.0, 80.0)
-						hitbox_shape.position = Vector2(0.0, -26.0)
+						rect.size = Vector2(800.0, 320.0)
+						hitbox_shape.position = Vector2(0.0, -104.0)
 			# Spawn VFX.
 			var vfx: SpecialVFX = SpecialVFX.new()
 			match _special_tier:
 				1:
 					vfx.setup(30.0, Color.CYAN, 0.3)
-					vfx.position = Vector2(22.0 if not animated_sprite.flip_h else -22.0, -30.0)
+					vfx.position = Vector2(88.0 if not animated_sprite.flip_h else -88.0, -120.0)
 				2:
 					vfx.setup(60.0, Color.MEDIUM_PURPLE, 0.4)
-					vfx.position = Vector2(0.0, -30.0)
+					vfx.position = Vector2(0.0, -120.0)
 				3:
 					vfx.setup(120.0, Color.GOLD, 0.5)
-					vfx.position = Vector2(0.0, -30.0)
+					vfx.position = Vector2(0.0, -120.0)
 			add_child(vfx)
 			var flash_color: Color = Color.WHITE if _special_tier < 3 else Color.GOLD
 			ScreenFX.flash(0.1 + 0.05 * float(_special_tier), flash_color)
@@ -883,9 +883,9 @@ func _spawn_hit_spark(attacker_pos: Vector2) -> void:
 	var mat := ParticleProcessMaterial.new()
 	mat.direction = Vector3((global_position.x - attacker_pos.x), -0.5, 0.0).normalized()
 	mat.spread = 50.0
-	mat.initial_velocity_min = 100.0
-	mat.initial_velocity_max = 200.0
-	mat.gravity = Vector3(0, 300, 0)
+	mat.initial_velocity_min = 400.0
+	mat.initial_velocity_max = 800.0
+	mat.gravity = Vector3(0, 1200, 0)
 	mat.damping_min = 3.0
 	mat.damping_max = 6.0
 	mat.scale_min = 1.0

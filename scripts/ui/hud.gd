@@ -13,11 +13,11 @@ const BAR_BG_COLOR: Color = Color(0.15, 0.15, 0.15)
 const METER_EMPTY_COLOR: Color = Color(0.3, 0.3, 0.3)
 const METER_FULL_COLOR: Color = Color(1.0, 0.85, 0.0)  # gold
 
-const HEALTH_BAR_WIDTH: float = 80.0
-const HEALTH_BAR_HEIGHT: float = 8.0
-const METER_SEGMENT_WIDTH: float = 24.0
-const METER_SEGMENT_HEIGHT: float = 4.0
-const METER_GAP: float = 2.0
+const HEALTH_BAR_WIDTH: float = 320.0
+const HEALTH_BAR_HEIGHT: float = 32.0
+const METER_SEGMENT_WIDTH: float = 96.0
+const METER_SEGMENT_HEIGHT: float = 16.0
+const METER_GAP: float = 8.0
 
 ## Per-player node references.
 var _p1_health_fill: ColorRect
@@ -48,10 +48,10 @@ func _ready() -> void:
 	# Root layout: 4 px margins around the whole HUD strip.
 	var margin: MarginContainer = MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	margin.add_theme_constant_override("margin_left", 4)
-	margin.add_theme_constant_override("margin_right", 4)
-	margin.add_theme_constant_override("margin_top", 4)
-	margin.add_theme_constant_override("margin_bottom", 4)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(margin)
 

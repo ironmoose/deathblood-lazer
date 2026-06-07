@@ -11,10 +11,10 @@ extends CharacterBody2D
 enum State { IDLE, APPROACH, ATTACK, STAGGER, DEATH }
 
 @export var max_hp: int = 30
-@export var move_speed: float = 40.0
-@export var attack_range: float = 55.0
+@export var move_speed: float = 160.0
+@export var attack_range: float = 220.0
 @export var attack_damage: int = 10
-@export var knockback_force: float = 80.0
+@export var knockback_force: float = 320.0
 @export var stagger_duration: float = 0.3
 @export var attack_cooldown: float = 1.0
 
@@ -22,28 +22,28 @@ enum State { IDLE, APPROACH, ATTACK, STAGGER, DEATH }
 @export var sprite_folder: String = "res://assets/sprites/enemies/Craftpix_Orc/Orc_Warrior/"
 
 const FRAME_SIZE: int = 96
-const BELT_MIN_Y: float = 160.0
-const BELT_MAX_Y: float = 340.0
+const BELT_MIN_Y: float = 640.0
+const BELT_MAX_Y: float = 1360.0
 
 ## Vertical speed multiplier for depth feel (same as player).
 const VERTICAL_SPEED_FACTOR: float = 0.7
 
 ## Y-axis tolerance for lining up to attack.
-const Y_ATTACK_TOLERANCE: float = 25.0
+const Y_ATTACK_TOLERANCE: float = 100.0
 
 ## Brief pause in IDLE before re-acquiring a target.
 const IDLE_THINK_TIME: float = 0.4
 
 const RETARGET_INTERVAL: float = 0.5
-const SEPARATION_RADIUS: float = 40.0
-const SEPARATION_FORCE: float = 60.0
+const SEPARATION_RADIUS: float = 160.0
+const SEPARATION_FORCE: float = 240.0
 
 ## Enemies stop approaching when this close to target.
-const STANDOFF_DISTANCE: float = 55.0
+const STANDOFF_DISTANCE: float = 220.0
 ## When waiting (denied attack), drift to this distance from target.
-const ORBIT_DISTANCE: float = 70.0
+const ORBIT_DISTANCE: float = 280.0
 ## Force pushing enemy away from player when too close.
-const PLAYER_REPEL_FORCE: float = 80.0
+const PLAYER_REPEL_FORCE: float = 320.0
 
 ## Mapping from sprite-sheet file base name to animation name.
 const ANIM_MAP: Dictionary = {
@@ -81,7 +81,7 @@ var _launch_height: float = 0.0
 var _launch_velocity: float = 0.0
 var _is_launched: bool = false
 var _launch_h_velocity: float = 0.0
-const LAUNCH_GRAVITY: float = 600.0
+const LAUNCH_GRAVITY: float = 2400.0
 
 ## Debug overlay.
 var _debug_label: Label = null
@@ -304,7 +304,7 @@ func _update_approach(delta: float) -> void:
 
 func _update_attack(_delta: float) -> void:
 	# Position hitbox in front of enemy based on facing direction.
-	hitbox.position.x = 25.0 if not animated_sprite.flip_h else -25.0
+	hitbox.position.x = 100.0 if not animated_sprite.flip_h else -100.0
 
 	velocity = Vector2.ZERO
 	move_and_slide()
@@ -370,13 +370,13 @@ func _on_damage_received(amount: int, knockback: float, hitstun: float, attacker
 	# Launch on heavy combo finisher (Attack_3 does 25+ damage).
 	if amount >= 25:
 		_is_launched = true
-		_launch_velocity = -350.0
+		_launch_velocity = -1400.0
 		_launch_height = 0.0
 		# Horizontal knockback away from attacker.
 		if attacker and is_instance_valid(attacker):
 			var attacker_2d := attacker as Node2D
 			if attacker_2d:
-				_launch_h_velocity = signf(global_position.x - attacker_2d.global_position.x) * 200.0
+				_launch_h_velocity = signf(global_position.x - attacker_2d.global_position.x) * 800.0
 		ScreenFX.shake(0.25, 8.0)
 	# Hit flash.
 	if animated_sprite.material is ShaderMaterial:
@@ -466,9 +466,9 @@ func _spawn_hit_spark(attacker_pos: Vector2) -> void:
 	var mat := ParticleProcessMaterial.new()
 	mat.direction = Vector3((global_position.x - attacker_pos.x), -0.5, 0.0).normalized()
 	mat.spread = 50.0
-	mat.initial_velocity_min = 100.0
-	mat.initial_velocity_max = 200.0
-	mat.gravity = Vector3(0, 300, 0)
+	mat.initial_velocity_min = 400.0
+	mat.initial_velocity_max = 800.0
+	mat.gravity = Vector3(0, 1200, 0)
 	mat.damping_min = 3.0
 	mat.damping_max = 6.0
 	mat.scale_min = 1.0

@@ -1,45 +1,15 @@
 ## Main scene controller.
 ##
-## Handles synthwave atmosphere setup: dark ambient modulate is applied here
-## so it can be adjusted in code without needing separate scene resources.
-##
-## Builds a minimal parallax background (sky only) and a subtle ground fog
-## particle effect in _ready() so the .tscn stays minimal. No castle, no
-## floor sprite, no underglow; the simplest backdrop possible to keep the
-## playfield readable.
+## Applies a dark ambient CanvasModulate tint and a subtle ground-fog particle
+## effect over whatever stage scene is instanced under Game. The stage handles
+## its own parallax stack.
 extends Node
 
 func _ready() -> void:
-	# Hide placeholder ColorRect backgrounds.
-	var bg_node: Node = get_node_or_null("Background")
-	if bg_node:
-		bg_node.visible = false
-	var floor_node: Node = get_node_or_null("FloorBelt")
-	if floor_node:
-		floor_node.visible = false
-
 	# Dark ambient tint.
 	var canvas_mod := CanvasModulate.new()
 	canvas_mod.color = Color(0.5, 0.4, 0.55, 1.0)
 	add_child(canvas_mod)
-
-	# === Parallax Background ===
-	var parallax_bg := ParallaxBackground.new()
-	parallax_bg.name = "ParallaxBG"
-	add_child(parallax_bg)
-	move_child(parallax_bg, 0)
-
-	# --- Layer 1: Skybox (far, very slow scroll) ---
-	var sky_layer := ParallaxLayer.new()
-	sky_layer.motion_scale = Vector2(0.05, 0.0)
-	sky_layer.motion_mirroring = Vector2(640, 0)
-	var sky_sprite := Sprite2D.new()
-	sky_sprite.texture = load("res://assets/sprites/environment/skybox.png")
-	sky_sprite.centered = false
-	sky_sprite.position = Vector2(0, 0)
-	sky_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sky_layer.add_child(sky_sprite)
-	parallax_bg.add_child(sky_layer)
 
 	# --- Ground Fog (subtle atmospheric mist) ---
 	var fog := GPUParticles2D.new()
@@ -48,7 +18,7 @@ func _ready() -> void:
 	fog.lifetime = 3.0
 	fog.preprocess = 3.0
 	fog.z_index = 5
-	fog.position = Vector2(320, 230)
+	fog.position = Vector2(1280, 920)
 	fog.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	var fog_img: Image = Image.create(8, 8, false, Image.FORMAT_RGBA8)
@@ -62,11 +32,11 @@ func _ready() -> void:
 
 	var fog_mat := ParticleProcessMaterial.new()
 	fog_mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	fog_mat.emission_box_extents = Vector3(300.0, 5.0, 0.0)
+	fog_mat.emission_box_extents = Vector3(1200.0, 20.0, 0.0)
 	fog_mat.direction = Vector3(0.0, -1.0, 0.0)
 	fog_mat.spread = 50.0
-	fog_mat.initial_velocity_min = 8.0
-	fog_mat.initial_velocity_max = 20.0
+	fog_mat.initial_velocity_min = 32.0
+	fog_mat.initial_velocity_max = 80.0
 	fog_mat.gravity = Vector3(0.0, -3.0, 0.0)
 	fog_mat.scale_min = 4.0
 	fog_mat.scale_max = 10.0

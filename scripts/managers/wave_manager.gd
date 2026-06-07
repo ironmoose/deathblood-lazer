@@ -65,12 +65,12 @@ func _on_wave_cleared() -> void:
 
 func _spawn_wave() -> void:
 	current_wave += 1
-	var spawn_x: float = 580.0
+	var spawn_x: float = 2320.0
 	for i: int in range(enemies_per_wave):
 		var enemy: Node2D = enemy_scene.instantiate() as Node2D
-		# Spread enemies across the belt (115-235 Y range)
-		var y_pos: float = 135.0 + (i * 40.0)
-		y_pos = clampf(y_pos, 115.0, 235.0)
-		enemy.position = Vector2(spawn_x + (i * 40), y_pos)
+		# Spread enemies across the belt (460-940 Y range)
+		var y_pos: float = 540.0 + (i * 160.0)
+		y_pos = clampf(y_pos, 460.0, 940.0)
+		enemy.position = Vector2(spawn_x + (i * 160), y_pos)
 		_entities.add_child(enemy)
 	_waiting_for_next_wave = false

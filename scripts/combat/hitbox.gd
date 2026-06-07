@@ -9,7 +9,7 @@ extends Area2D
 
 signal damage_dealt(amount: int, target: Node)
 
-const Y_HIT_TOLERANCE: float = 28.0
+const Y_HIT_TOLERANCE: float = 112.0
 
 @export var damage: int = 10
 @export var knockback_force: float = 100.0
